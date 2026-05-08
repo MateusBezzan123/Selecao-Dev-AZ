@@ -14,6 +14,7 @@ import javax.persistence.Id;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -22,18 +23,33 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @Entity
-@Table(name = "TB_UNIDADE")
-@SequenceGenerator(name = "seq_unidade", sequenceName = "seq_unidade", allocationSize = 1)
-public class Unidade implements Serializable {
+@Table(name = "TB_LOTE")
+@SequenceGenerator(name = "seq_lote", sequenceName = "seq_lote", allocationSize = 1)
+public class Lote implements Serializable {
 
     @Id
     @Column(name = "ID")
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "seq_unidade")
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "seq_lote")
     @EqualsAndHashCode.Include
     private Long id;
 
-    @Column(name = "NOME", nullable = false, length = 128)
-    private String nome;
+    @Column(name = "NUMEROLOTE", nullable = false)
+    private Integer numeroLote;
+
+    @Column(name = "DESCRICAO", nullable = false, length = 60)
+    private String descricao;
+
+    @Column(name = "QUANTIDADE", nullable = false)
+    private BigDecimal quantidade;
+
+    @Column(name = "VALORINICIAL", nullable = false)
+    private BigDecimal valorInicial;
+
+    @Column(name = "UNIDADE", nullable = false, length = 128)
+    private String unidade;
+
+    @Column(name = "LEILAO", nullable = false)
+    private Long leilao;
 
     @Column(name = "CREATEDAT", nullable = false)
     private LocalDateTime createdAt;

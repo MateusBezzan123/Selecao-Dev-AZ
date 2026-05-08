@@ -22,18 +22,27 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @Entity
-@Table(name = "TB_UNIDADE")
-@SequenceGenerator(name = "seq_unidade", sequenceName = "seq_unidade", allocationSize = 1)
-public class Unidade implements Serializable {
+@Table(name = "TB_LEILAO")
+@SequenceGenerator(name = "seq_leilao", sequenceName = "seq_leilao", allocationSize = 1)
+public class Leilao implements Serializable {
 
     @Id
     @Column(name = "ID")
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "seq_unidade")
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "seq_leilao")
     @EqualsAndHashCode.Include
     private Long id;
 
-    @Column(name = "NOME", nullable = false, length = 128)
-    private String nome;
+    @Column(name = "CODIGO", nullable = false)
+    private Integer codigo;
+
+    @Column(name = "DESCRICAO", nullable = false, length = 60)
+    private String descricao;
+
+    @Column(name = "VENDEDOR", nullable = false)
+    private Long vendedor;
+
+    @Column(name = "INICIOPREVISTO", nullable = false)
+    private LocalDateTime inicioPrevisto;
 
     @Column(name = "CREATEDAT", nullable = false)
     private LocalDateTime createdAt;
