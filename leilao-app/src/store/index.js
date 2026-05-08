@@ -1,15 +1,35 @@
 import Vue from 'vue'
-import Vuex from 'vuex'
+import VueRouter from 'vue-router'
+import Home from '../views/Home.vue'
 
-Vue.use(Vuex)
+Vue.use(VueRouter)
 
-export default new Vuex.Store({
-  state: {
+const routes = [
+  {
+    path: '/',
+    name: 'Home',
+    component: Home
   },
-  mutations: {
+  {
+    path: '/unidades',
+    name: 'Unidades',
+    component: () => import('../views/unidade/Unidades.vue')
   },
-  actions: {
+  {
+    path: '/empresas',
+    name: 'Empresas',
+    component: () => import('../views/empresa/Empresas.vue')
   },
-  modules: {
+  {
+    path: '/leiloes',
+    name: 'Leiloes',
+    component: () => import('../views/leilao/Leiloes.vue')
   }
+]
+
+const router = new VueRouter({
+  mode: 'hash',
+  routes
 })
+
+export default router
