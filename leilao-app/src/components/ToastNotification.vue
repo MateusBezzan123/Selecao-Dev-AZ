@@ -13,7 +13,7 @@ export default {
   props: {
     visible: { type: Boolean, default: false },
     message: { type: String,  default: '' },
-    type:    { type: String,  default: 'success' } // success | error | info
+    type:    { type: String,  default: 'success' }
   },
   computed: {
     icon() {
