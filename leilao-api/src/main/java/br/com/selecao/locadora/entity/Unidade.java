@@ -28,7 +28,7 @@ public class Unidade implements Serializable {
 
     @Id
     @Column(name = "ID")
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "seq_unidade")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_unidade")
     @EqualsAndHashCode.Include
     private Long id;
 
