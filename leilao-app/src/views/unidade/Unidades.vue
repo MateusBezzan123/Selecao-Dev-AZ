@@ -1,10 +1,8 @@
 <template>
   <div class="unidades-page">
 
-    <!-- Toast -->
     <ToastNotification :visible="toast.visible" :message="toast.message" :type="toast.type" />
 
-    <!-- Confirm Dialog -->
     <ConfirmDialog
       :visible="confirm.visible"
       title="Excluir Unidade"
@@ -13,7 +11,6 @@
       @cancel="confirm.visible = false"
     />
 
-    <!-- Page header -->
     <div class="page-header">
       <div class="page-title">
         <span class="page-icon">📦</span>
@@ -25,16 +22,13 @@
       <button class="btn-new" @click="adicionarLinha">+ Nova Unidade</button>
     </div>
 
-    <!-- Loading -->
     <div v-if="loading" class="loading-wrap">
       <div class="spinner"></div>
       <span>Carregando...</span>
     </div>
 
-    <!-- Grid -->
     <div v-else class="table-card">
 
-      <!-- Toolbar -->
       <div class="table-toolbar">
         <input
           v-model="busca"
@@ -58,7 +52,6 @@
             </tr>
           </thead>
           <tbody>
-            <!-- Nova linha (inline insert) -->
             <tr v-if="novaLinha" class="row-new">
               <td class="col-id">—</td>
               <td class="col-nome">
@@ -77,7 +70,6 @@
               </td>
             </tr>
 
-            <!-- Linhas existentes -->
             <tr
               v-for="row in filteredRows"
               :key="row.id"
@@ -116,7 +108,7 @@
       </div>
     </div>
 
-    <p class="hint">💡 Dica: clique duas vezes em um nome para editá-lo diretamente na tabela.</p>
+    <p class="hint">Dica: clique duas vezes em um nome para editá-lo diretamente na tabela.</p>
   </div>
 </template>
 
@@ -164,7 +156,13 @@ export default {
   },
 
   methods: {
-    /* ── API ─────────────────────────────────────── */
+      limparFiltros() {
+      this.filtros = {
+        nome: '',
+      }
+      this.showToast('Filtros limpos', 'info')
+    },
+
     async buscarTodos() {
       this.loading = true
       try {
@@ -231,7 +229,6 @@ export default {
       }
     },
 
-    /* ── UI helpers ──────────────────────────────── */
     adicionarLinha() {
       this.novaLinha = { nome: '' }
       this.$nextTick(() => {
@@ -274,7 +271,6 @@ export default {
 <style scoped>
 .unidades-page { max-width: 860px; margin: 0 auto; }
 
-/* ── Header ────────────────────────────────────── */
 .page-header {
   display: flex;
   align-items: center;
@@ -303,7 +299,6 @@ export default {
 .btn-new:hover  { background: #369870; }
 .btn-new:active { transform: scale(0.97); }
 
-/* ── Loading ───────────────────────────────────── */
 .loading-wrap {
   display: flex; align-items: center; justify-content: center;
   gap: 14px; padding: 60px; color: #7f8c8d; font-size: 0.95rem;
@@ -316,7 +311,6 @@ export default {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Card ──────────────────────────────────────── */
 .table-card {
   background: #fff;
   border-radius: 12px;
@@ -324,7 +318,6 @@ export default {
   overflow: hidden;
 }
 
-/* ── Toolbar ───────────────────────────────────── */
 .table-toolbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 20px; border-bottom: 1px solid #f0f0f0;
@@ -338,13 +331,16 @@ export default {
 }
 .search-input:focus { border-color: #42b983; }
 .total-badge {
-  font-size: 0.82rem; color: #95a5a6;
-  background: #f5f5f5; padding: 4px 12px; border-radius: 20px;
+  font-size: 0.82rem; 
+  color: #95a5a6;
+  background: #f5f5f5; 
+  padding: 4px 12px; 
+  border-radius: 20px;
 }
 
 .table-wrapper { overflow-x: auto; }
 
-/* ── Table ─────────────────────────────────────── */
+
 .data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 
 .data-table thead tr { background: #f8f9fa; }
@@ -369,12 +365,11 @@ export default {
 .col-id    { width: 80px; }
 .col-acoes { width: 110px; text-align: center; }
 
-/* ── Row states ────────────────────────────────── */
+
 .row-new     { background: #f0fff8 !important; }
 .row-editing { background: #fffdf0 !important; }
 .row-saving  { opacity: .6; pointer-events: none; }
 
-/* ── Cell input ────────────────────────────────── */
 .cell-input {
   width: 100%; padding: 6px 10px;
   border: 1.5px solid #42b983; border-radius: 5px;
@@ -388,7 +383,6 @@ export default {
 }
 .cell-text:hover { background: #f0fff8; }
 
-/* ── Action buttons ────────────────────────────── */
 .col-acoes button {
   width: 32px; height: 32px;
   border: none; border-radius: 6px;
@@ -406,7 +400,25 @@ export default {
 .btn-cancel-row        { background: #ecf0f1; color: #7f8c8d; font-size: 1rem; }
 .btn-cancel-row:hover  { background: #d5dbdb; }
 
-/* ── Empty / hint ──────────────────────────────── */
+
 .empty-state { text-align: center; color: #bdc3c7; font-style: italic; padding: 40px !important; }
 .hint { margin-top: 14px; font-size: 0.8rem; color: #bdc3c7; text-align: center; }
+
+ .btn-clear {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-clear {
+  background: #ecf0f1;
+  color: #7f8c8d;
+}
+.btn-clear:hover {
+  background: #d5dbdb;
+}
 </style>
