@@ -1,98 +1,143 @@
 <template>
-  <div class="leiloes-page">
+  <div class="leiloes-page container">
     <ToastNotification :visible="toast.visible" :message="toast.message" :type="toast.type" />
 
-    <div class="page-header">
-      <div class="page-title">
-        <span class="page-icon">🔖</span>
-        <div>
-          <h1>Leilões</h1>
-          <p>Consulta dos leilões cadastrados no sistema</p>
+    <div class="page-header animate-fade">
+      <div>
+        <h1 class="page-title">Leilões</h1>
+        <p class="page-subtitle">Gerencie e acompanhe todos os leilões do sistema</p>
+      </div>
+      <div class="stats-cards">
+        <div class="stat-card">
+          <span class="stat-value">{{ rows.length }}</span>
+          <span class="stat-label">Total</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">{{ formatarMoeda(totalGeralLeiloes) }}</span>
+          <span class="stat-label">Valor Total</span>
         </div>
       </div>
     </div>
 
-    <div v-if="loading" class="loading-wrap">
-      <div class="spinner"></div>
-      <span>Carregando...</span>
-    </div>
+    <LoadingSkeleton v-if="loading" type="table" />
 
-    <div v-else class="table-card">
-      <div class="table-toolbar">
-        <div class="filters-wrap">
-          <input v-model="filtros.vendedor"   class="filter-input" placeholder="🔍 Vendedor" />
-          <input v-model="filtros.descricao"  class="filter-input" placeholder="🔍 Descrição" />
-          <input v-model="filtros.dataInicio" class="filter-input" type="date" title="Data início a partir de" />
-          <input v-model="filtros.dataFim"    class="filter-input" type="date" title="Data início até" />
-          <button class="btn-limpar" @click="limparFiltros">✕ Limpar</button>
+    <AppCard v-else class="animate-fade">
+      <div class="filters-section">
+        <div class="filters-grid">
+          <AppInput
+            v-model="filtros.vendedor"
+            placeholder="Filtrar por vendedor..."
+            icon="🔍"
+          />
+          <AppInput
+            v-model="filtros.descricao"
+            placeholder="Filtrar por descrição..."
+            icon="📝"
+          />
+          <div class="date-filters">
+            <input type="date" v-model="filtros.dataInicio" class="date-input" placeholder="Data inicial" />
+            <span class="date-separator">até</span>
+            <input type="date" v-model="filtros.dataFim" class="date-input" placeholder="Data final" />
+          </div>
+          <AppButton variant="outline" @click="limparFiltros" size="sm">
+            ✕ Limpar filtros
+          </AppButton>
         </div>
-        <span class="total-badge">{{ filteredRows.length }} registro(s)</span>
       </div>
 
-      <div class="table-wrapper">
-        <table class="data-table">
+      <div class="table-container">
+        <table class="modern-table">
           <thead>
             <tr>
-              <th @click="sortBy('codigo')">
-                Código <span class="sort-icon">{{ sortIcon('codigo') }}</span>
+              <th @click="sortBy('codigo')" class="sortable">
+                Código
+                <span class="sort-icon">{{ sortIcon('codigo') }}</span>
               </th>
-              <th @click="sortBy('descricao')">
-                Descrição <span class="sort-icon">{{ sortIcon('descricao') }}</span>
+              <th @click="sortBy('descricao')" class="sortable">
+                Descrição
+                <span class="sort-icon">{{ sortIcon('descricao') }}</span>
               </th>
-              <th @click="sortBy('_vendedorNome')">
-                Vendedor <span class="sort-icon">{{ sortIcon('_vendedorNome') }}</span>
+              <th @click="sortBy('_vendedorNome')" class="sortable">
+                Vendedor
+                <span class="sort-icon">{{ sortIcon('_vendedorNome') }}</span>
               </th>
-              <th @click="sortBy('inicioPrevisto')">
-                Início Previsto <span class="sort-icon">{{ sortIcon('inicioPrevisto') }}</span>
+              <th @click="sortBy('inicioPrevisto')" class="sortable">
+                Início Previsto
+                <span class="sort-icon">{{ sortIcon('inicioPrevisto') }}</span>
               </th>
-              <th class="th-total" @click="sortBy('_total')">
-                Total do Leilão <span class="sort-icon">{{ sortIcon('_total') }}</span>
+              <th @click="sortBy('_total')" class="sortable text-right">
+                Total
+                <span class="sort-icon">{{ sortIcon('_total') }}</span>
               </th>
+              <th class="text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in filteredRows" :key="row.id">
-              <td><span class="badge-cod">{{ row.codigo }}</span></td>
-              <td>{{ row.descricao }}</td>
-              <td><span class="vendedor-nome">{{ row._vendedorNome || '—' }}</span></td>
+            <tr v-for="row in filteredRows" :key="row.id" class="table-row">
+              <td><span class="badge">{{ row.codigo }}</span></td>
+              <td class="descricao-cell">{{ row.descricao }}</td>
+              <td>{{ row._vendedorNome || '—' }}</td>
               <td>{{ formatarData(row.inicioPrevisto) }}</td>
-              <td class="td-total">{{ formatarMoeda(row._total) }}</td>
+              <td class="text-right highlight">{{ formatarMoeda(row._total) }}</td>
+              <td class="text-right">
+                <button class="action-btn view" title="Ver detalhes" @click="verDetalhes(row)">
+                  👁️
+                </button>
+                <button class="action-btn edit" title="Editar" @click="editarLeilao(row)">
+                  ✏️
+                </button>
+              </td>
             </tr>
             <tr v-if="filteredRows.length === 0">
-              <td colspan="5" class="empty-state">Nenhum leilão encontrado.</td>
+              <td colspan="6" class="empty-state">
+                <div class="empty-state-content">
+                  <span class="empty-icon">🔍</span>
+                  <p>Nenhum leilão encontrado</p>
+                  <AppButton variant="outline" size="sm" @click="limparFiltros">
+                    Limpar filtros
+                  </AppButton>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div v-if="filteredRows.length > 0" class="table-footer">
-        <span>Total geral filtrado:</span>
-        <strong>{{ formatarMoeda(totalGeral) }}</strong>
+      <div class="table-footer">
+        <div class="footer-info">
+          <span>Mostrando <strong>{{ filteredRows.length }}</strong> de <strong>{{ rows.length }}</strong> leilões</span>
+        </div>
+        <div class="footer-total">
+          <span>Total filtrado:</span>
+          <strong>{{ formatarMoeda(totalGeral) }}</strong>
+        </div>
       </div>
-    </div>
-
-    <p class="hint">💡 Filtre por período usando as datas de início e fim.</p>
+    </AppCard>
   </div>
 </template>
 
 <script>
 import ToastNotification from '@/components/ToastNotification.vue'
+import AppCard from '@/components/ui/AppCard.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppInput from '@/components/ui/AppInput.vue'
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
 
-const API_LEILAO  = 'http://localhost:8081/leilao'
+const API_LEILAO = 'http://localhost:8081/leilao'
 const API_EMPRESA = 'http://localhost:8081/empresa'
-const API_LOTE    = 'http://localhost:8081/lote'
+const API_LOTE = 'http://localhost:8081/lote'
 
 export default {
   name: 'Leiloes',
-  components: { ToastNotification },
-
+  components: { ToastNotification, AppCard, AppButton, AppInput, LoadingSkeleton },
+  
   data() {
     return {
-      rows:    [],
+      rows: [],
       loading: true,
       sortKey: 'inicioPrevisto',
       sortDir: 'asc',
-      toast:   { visible: false, message: '', type: 'success' },
+      toast: { visible: false, message: '', type: 'success' },
       filtros: { vendedor: '', descricao: '', dataInicio: '', dataFim: '' }
     }
   },
@@ -113,7 +158,8 @@ export default {
         list = list.filter(r => new Date(r.inicioPrevisto) >= di)
       }
       if (this.filtros.dataFim) {
-        const df = new Date(this.filtros.dataFim); df.setHours(23, 59, 59)
+        const df = new Date(this.filtros.dataFim)
+        df.setHours(23, 59, 59)
         list = list.filter(r => new Date(r.inicioPrevisto) <= df)
       }
       return [...list].sort((a, b) => {
@@ -125,6 +171,9 @@ export default {
     },
     totalGeral() {
       return this.filteredRows.reduce((s, r) => s + (r._total || 0), 0)
+    },
+    totalGeralLeiloes() {
+      return this.rows.reduce((s, r) => s + (r._total || 0), 0)
     }
   },
 
@@ -149,7 +198,7 @@ export default {
         this.rows = leiloes.map(l => ({
           ...l,
           _vendedorNome: empresaMap[l.vendedor]?.razaoSocial || `Empresa #${l.vendedor}`,
-          _total:        totalPorLeilao[l.id] || 0
+          _total: totalPorLeilao[l.id] || 0
         }))
       } catch (err) {
         this.showToast('Erro ao carregar dados dos leilões.', 'error')
@@ -160,6 +209,7 @@ export default {
 
     limparFiltros() {
       this.filtros = { vendedor: '', descricao: '', dataInicio: '', dataFim: '' }
+      this.showToast('Filtros removidos', 'info')
     },
 
     sortBy(key) {
@@ -182,68 +232,264 @@ export default {
     },
 
     formatarMoeda(valor) {
-      return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      return Number(valor || 0).toLocaleString('pt-BR', { 
+        style: 'currency', 
+        currency: 'BRL' 
+      })
     },
 
     showToast(msg, type = 'success') {
       this.toast = { visible: true, message: msg, type }
       setTimeout(() => { this.toast.visible = false }, 3200)
+    },
+
+    verDetalhes(row) {
+      this.showToast(`Visualizando detalhes do leilão ${row.codigo}`, 'info')
+    },
+
+    editarLeilao(row) {
+      this.showToast(`Editar leilão ${row.codigo}`, 'info')
     }
   }
 }
 </script>
 
 <style scoped>
-.leiloes-page { max-width: 1100px; margin: 0 auto; }
+.leiloes-page {
+  animation: fadeIn 0.5s ease;
+}
 
-.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-.page-title  { display: flex; align-items: center; gap: 14px; }
-.page-icon   { font-size: 2.2rem; }
-.page-title h1 { font-size: 1.6rem; font-weight: 700; color: #2c3e50; margin: 0; }
-.page-title p  { font-size: 0.85rem; color: #95a5a6; margin: 2px 0 0; }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
 
-.loading-wrap  { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 60px; color: #7f8c8d; }
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: var(--spacing-xs);
+}
 
-.spinner { width: 28px; height: 28px; border: 3px solid #ddd; border-top-color: #42b983; border-radius: 50%; animation: spin .7s linear infinite; }
+.page-subtitle {
+  color: var(--gray-600);
+}
 
-@keyframes spin { to { transform: rotate(360deg); } }
-.table-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); overflow: hidden; }
-.table-toolbar { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.stats-cards {
+  display: flex;
+  gap: var(--spacing-md);
+}
 
-.filters-wrap  { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.filter-input  { padding: 8px 12px; border: 1.5px solid #e0e0e0; border-radius: 7px; font-size: 0.85rem; width: 150px; outline: none; transition: all .2s; }
-.filter-input:focus { border-color: #42b983; box-shadow: 0 0 0 2px rgba(66,185,131,.1); }
+.stat-card {
+  background: var(--gray-100);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  min-width: 120px;
+}
 
-.btn-limpar { padding: 8px 14px; background: #f5f5f5; border: 1.5px solid #e0e0e0; border-radius: 7px; font-size: 0.82rem; cursor: pointer; color: #7f8c8d; transition: all .2s; }
-.btn-limpar:hover { background: #ecf0f1; }
+.stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
 
-.total-badge { font-size: 0.82rem; color: #95a5a6; background: #f5f5f5; padding: 4px 12px; border-radius: 20px; }
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
 
-.table-wrapper { overflow-x: auto; }
+.filters-section {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--gray-200);
+}
 
-.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
-.data-table thead tr { background: #f8f9fa; }
-.data-table th { padding: 13px 16px; text-align: left; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #95a5a6; border-bottom: 2px solid #ecf0f1; cursor: pointer; user-select: none; white-space: nowrap; }
-.data-table th:hover { color: #2c3e50; }
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
 
-.th-total { text-align: right; }
+.date-filters {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
 
-.sort-icon { font-size: 0.75rem; margin-left: 4px; }
+.date-input {
+  flex: 1;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
 
-.data-table td { padding: 13px 16px; border-bottom: 1px solid #f4f4f4; color: #34495e; vertical-align: middle; }
-.data-table tbody tr:hover { background: #fafffe; }
-.data-table tbody tr:last-child td { border-bottom: none; }
+.date-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
 
-.badge-cod { display: inline-block; background: #eaf7f1; color: #27ae60; padding: 2px 10px; border-radius: 12px; font-weight: 700; font-size: 0.82rem; }
+.date-separator {
+  color: var(--gray-500);
+  font-size: 0.875rem;
+}
 
-.vendedor-nome { font-weight: 500; }
+.table-container {
+  overflow-x: auto;
+}
 
-.td-total { text-align: right; font-weight: 700; color: #27ae60; }
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+}
 
-.table-footer { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 14px 20px; background: #f8f9fa; border-top: 2px solid #ecf0f1; font-size: 0.9rem; color: #555; }
-.table-footer strong { color: #27ae60; font-size: 1rem; }
+.modern-table th {
+  text-align: left;
+  padding: var(--spacing-md);
+  background: var(--gray-50);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  border-bottom: 2px solid var(--gray-200);
+}
 
-.empty-state { text-align: center; color: #bdc3c7; font-style: italic; padding: 40px !important; }
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
 
-.hint { margin-top: 14px; font-size: 0.8rem; color: #bdc3c7; text-align: center; }
+.sortable:hover {
+  color: var(--primary);
+}
+
+.sort-icon {
+  margin-left: var(--spacing-xs);
+  font-size: 0.75rem;
+}
+
+.modern-table td {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--gray-200);
+  transition: background 0.2s;
+}
+
+.table-row:hover {
+  background: var(--gray-50);
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--primary-light);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.descricao-cell {
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.highlight {
+  font-weight: 600;
+  color: var(--secondary);
+}
+
+.text-right {
+  text-align: right;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: var(--spacing-xs);
+  margin: 0 2px;
+  transition: transform 0.2s;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-2xl) !important;
+}
+
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  opacity: 0.5;
+}
+
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: var(--gray-50);
+  border-top: 1px solid var(--gray-200);
+  margin-top: var(--spacing-md);
+}
+
+.footer-total {
+  font-weight: 600;
+}
+
+.footer-total strong {
+  color: var(--secondary);
+  margin-left: var(--spacing-sm);
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .stats-cards {
+    width: 100%;
+  }
+  
+  .stat-card {
+    flex: 1;
+  }
+  
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .date-filters {
+    flex-direction: column;
+  }
+  
+  .table-footer {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    text-align: center;
+  }
+}
 </style>

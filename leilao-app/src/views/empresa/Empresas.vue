@@ -1,5 +1,5 @@
 <template>
-  <div class="empresas-page">
+  <div class="empresas-page container">
     <ToastNotification :visible="toast.visible" :message="toast.message" :type="toast.type" />
     <ConfirmDialog
       :visible="confirm.visible"
@@ -9,92 +9,251 @@
       @cancel="confirm.visible = false"
     />
 
-    <div class="page-header">
-      <div class="page-title">
-        <span class="page-icon">🏢</span>
-        <div>
-          <h1>Empresas</h1>
-          <p>Gerencie as empresas cadastradas no sistema</p>
-        </div>
+    <div class="page-header animate-fade">
+      <div>
+        <h1 class="page-title">Empresas</h1>
+        <p class="page-subtitle">Gerencie todas as empresas parceiras</p>
       </div>
-      <router-link to="/empresa" class="btn-new">+ Nova Empresa</router-link>
+      <div class="header-actions">
+        <div class="stat-badge">
+          <span class="stat-number">{{ rows.length }}</span>
+          <span class="stat-text">empresas ativas</span>
+        </div>
+        <AppButton variant="primary" @click="irParaNovaEmpresa" size="lg">
+          ➕ Nova Empresa
+        </AppButton>
+      </div>
     </div>
 
-    <div v-if="loading" class="loading-wrap">
-      <div class="spinner"></div>
-      <span>Carregando...</span>
-    </div>
+    <LoadingSkeleton v-if="loading" type="table" :rows="5" :columns="5" />
 
-    <div v-else class="table-card">
-      <div class="table-toolbar">
-        <div class="filters-wrap">
-          <input v-model="filtros.cnpj"        class="filter-input" placeholder="🔍 CNPJ" />
-          <input v-model="filtros.razaoSocial"  class="filter-input" placeholder="🔍 Razão Social" />
-          <input v-model="filtros.telefone"     class="filter-input" placeholder="🔍 Telefone" />
-          <input v-model="filtros.email"        class="filter-input" placeholder="🔍 E-mail" />
+    <AppCard v-else class="animate-fade">
+      <div class="toolbar">
+        <div class="search-section">
+          <AppInput
+            v-model="searchTerm"
+            placeholder="Buscar empresas..."
+            icon="🔍"
+            class="search-input"
+          />
+          <AppButton variant="outline" @click="alternarFiltros" size="md">
+            {{ mostrarFiltros ? 'Ocultar filtros ▲' : 'Mostrar filtros ▼' }}
+          </AppButton>
         </div>
-        <span class="total-badge">{{ filteredRows.length }} registro(s)</span>
+        
+        <div class="view-options">
+          <button 
+            @click="modoVisualizacao = 'tabela'" 
+            :class="['view-btn', { active: modoVisualizacao === 'tabela' }]"
+            title="Visualização em tabela"
+          >
+            📊
+          </button>
+          <button 
+            @click="modoVisualizacao = 'cards'" 
+            :class="['view-btn', { active: modoVisualizacao === 'cards' }]"
+            title="Visualização em cards"
+          >
+            🃏
+          </button>
+        </div>
       </div>
+      <transition name="slide">
+        <div v-if="mostrarFiltros" class="filters-panel">
+          <div class="filters-grid">
+            <AppInput v-model="filtros.cnpj" placeholder="CNPJ" label="CNPJ" />
+            <AppInput v-model="filtros.razaoSocial" placeholder="Razão Social" label="Razão Social" />
+            <AppInput v-model="filtros.telefone" placeholder="Telefone" label="Telefone" />
+            <AppInput v-model="filtros.email" placeholder="E-mail" label="E-mail" />
+            <AppInput v-model="filtros.cidade" placeholder="Cidade" label="Cidade" />
+          </div>
+          <div class="filters-actions">
+            <AppButton variant="outline" @click="limparFiltros" size="sm">
+              🗑️ Limpar todos
+            </AppButton>
+            <span class="filter-result">{{ filteredRows.length }} resultados</span>
+          </div>
+        </div>
+      </transition>
 
-      <div class="table-wrapper">
-        <table class="data-table">
+      <div v-if="modoVisualizacao === 'tabela'" class="table-container">
+        <table class="modern-table">
           <thead>
             <tr>
-              <th @click="sortBy('cnpj')">CNPJ <span class="sort-icon">{{ sortIcon('cnpj') }}</span></th>
-              <th @click="sortBy('razaoSocial')">Razão Social <span class="sort-icon">{{ sortIcon('razaoSocial') }}</span></th>
-              <th @click="sortBy('telefone')">Telefone <span class="sort-icon">{{ sortIcon('telefone') }}</span></th>
-              <th @click="sortBy('email')">E-mail <span class="sort-icon">{{ sortIcon('email') }}</span></th>
-              <th class="col-acoes">Ações</th>
+              <th @click="sortBy('cnpj')" class="sortable">
+                CNPJ <span class="sort-icon">{{ sortIcon('cnpj') }}</span>
+              </th>
+              <th @click="sortBy('razaoSocial')" class="sortable">
+                Razão Social <span class="sort-icon">{{ sortIcon('razaoSocial') }}</span>
+              </th>
+              <th @click="sortBy('telefone')" class="sortable">
+                Telefone <span class="sort-icon">{{ sortIcon('telefone') }}</span>
+              </th>
+              <th @click="sortBy('email')" class="sortable">
+                E-mail <span class="sort-icon">{{ sortIcon('email') }}</span>
+              </th>
+              <th @click="sortBy('municipio')" class="sortable">
+                Cidade <span class="sort-icon">{{ sortIcon('municipio') }}</span>
+              </th>
+              <th class="text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in filteredRows" :key="row.id">
-              <td>{{ formatarCNPJ(row.cnpj) }}</td>
-              <td>{{ row.razaoSocial }}</td>
+            <tr v-for="row in paginatedRows" :key="row.id" class="table-row">
+              <td>
+                <span class="cnpj-badge">{{ formatarCNPJ(row.cnpj) }}</span>
+              </td>
+              <td class="company-name">{{ row.razaoSocial }}</td>
               <td>{{ formatarTelefone(row.telefone) }}</td>
-              <td>{{ row.email || '—' }}</td>
-              <td class="col-acoes">
-                <router-link :to="`/empresa/${row.id}`" class="btn-edit" title="Editar">✏️</router-link>
-                <button class="btn-delete" title="Excluir" @click="confirmarDelecao(row)">🗑️</button>
+              <td>
+                <a :href="`mailto:${row.email}`" class="email-link" v-if="row.email">
+                  {{ row.email }}
+                </a>
+                <span v-else class="empty-value">—</span>
+              </td>
+              <td>
+                <span class="city-badge">
+                  📍 {{ row.municipio || 'Não informado' }}
+                </span>
+              </td>
+              <td class="text-right">
+                <div class="action-buttons">
+                  <button class="action-btn edit" @click="editarEmpresa(row.id)" title="Editar">
+                    ✏️
+                  </button>
+                  <button class="action-btn view" @click="verDetalhes(row)" title="Visualizar">
+                    👁️
+                  </button>
+                  <button class="action-btn delete" @click="confirmarDelecao(row)" title="Excluir">
+                    🗑️
+                  </button>
+                </div>
               </td>
             </tr>
             <tr v-if="filteredRows.length === 0">
-              <td colspan="5" class="empty-state">Nenhuma empresa encontrada.</td>
+              <td colspan="6" class="empty-state">
+                <div class="empty-state-content">
+                  <span class="empty-icon">🏢</span>
+                  <p>Nenhuma empresa encontrada</p>
+                  <AppButton variant="primary" size="sm" @click="irParaNovaEmpresa">
+                    Cadastrar primeira empresa
+                  </AppButton>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
-      </div>
-    </div>
 
-    <p class="hint">💡 Utilize os filtros para buscar empresas específicas.</p>
+        <div v-if="totalPages > 1" class="pagination">
+          <button @click="paginaAtual--" :disabled="paginaAtual === 1" class="page-btn">
+            ← Anterior
+          </button>
+          <div class="page-info">
+            Página {{ paginaAtual }} de {{ totalPages }}
+          </div>
+          <button @click="paginaAtual++" :disabled="paginaAtual === totalPages" class="page-btn">
+            Próxima →
+          </button>
+        </div>
+      </div>
+
+      <div v-else class="cards-grid">
+        <div 
+          v-for="row in paginatedRows" 
+          :key="row.id" 
+          class="company-card"
+          @click="verDetalhes(row)"
+        >
+          <div class="card-header">
+            <div class="card-icon">🏢</div>
+            <div class="card-actions">
+              <button @click.stop="editarEmpresa(row.id)" class="card-action" title="Editar">
+                ✏️
+              </button>
+              <button @click.stop="confirmarDelecao(row)" class="card-action" title="Excluir">
+                🗑️
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">{{ row.razaoSocial }}</h3>
+            <div class="card-info">
+              <span class="info-label">CNPJ:</span>
+              <span>{{ formatarCNPJ(row.cnpj) }}</span>
+            </div>
+            <div class="card-info" v-if="row.telefone">
+              <span class="info-label">📞:</span>
+              <span>{{ formatarTelefone(row.telefone) }}</span>
+            </div>
+            <div class="card-info" v-if="row.email">
+              <span class="info-label">📧:</span>
+              <span class="email-text">{{ row.email }}</span>
+            </div>
+            <div class="card-info" v-if="row.municipio">
+              <span class="info-label">📍:</span>
+              <span>{{ row.municipio }}{{ row.uf ? `/${row.uf}` : '' }}</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="badge-id">ID: {{ row.id }}</span>
+          </div>
+        </div>
+        
+        <div v-if="filteredRows.length === 0" class="empty-cards">
+          <div class="empty-state-content">
+            <span class="empty-icon">🏢</span>
+            <p>Nenhuma empresa encontrada</p>
+          </div>
+        </div>
+      </div>
+    </AppCard>
   </div>
 </template>
 
 <script>
 import ToastNotification from '@/components/ToastNotification.vue'
-import ConfirmDialog     from '@/components/ConfirmDialog.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import AppCard from '@/components/ui/AppCard.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppInput from '@/components/ui/AppInput.vue'
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
 
 const API = 'http://localhost:8081/empresa'
 
 export default {
   name: 'Empresas',
-  components: { ToastNotification, ConfirmDialog },
+  components: { ToastNotification, ConfirmDialog, AppCard, AppButton, AppInput, LoadingSkeleton },
 
   data() {
     return {
-      rows:    [],
+      rows: [],
       loading: true,
       sortKey: 'razaoSocial',
       sortDir: 'asc',
-      toast:   { visible: false, message: '', type: 'success' },
+      searchTerm: '',
+      mostrarFiltros: false,
+      modoVisualizacao: 'tabela',
+      paginaAtual: 1,
+      itensPorPagina: 10,
+      toast: { visible: false, message: '', type: 'success' },
       confirm: { visible: false, nome: '', id: null },
-      filtros: { cnpj: '', razaoSocial: '', telefone: '', email: '' }
+      filtros: { cnpj: '', razaoSocial: '', telefone: '', email: '', cidade: '' }
     }
   },
 
   computed: {
     filteredRows() {
       let list = [...this.rows]
+      
+      if (this.searchTerm) {
+        const term = this.searchTerm.toLowerCase()
+        list = list.filter(r => 
+          r.razaoSocial.toLowerCase().includes(term) ||
+          (r.cnpj && r.cnpj.includes(term)) ||
+          (r.email && r.email.toLowerCase().includes(term))
+        )
+      }
+      
       if (this.filtros.cnpj) {
         const q = this.filtros.cnpj.replace(/\D/g, '')
         list = list.filter(r => (r.cnpj || '').replace(/\D/g, '').includes(q))
@@ -111,16 +270,47 @@ export default {
         const q = this.filtros.email.toLowerCase()
         list = list.filter(r => (r.email || '').toLowerCase().includes(q))
       }
+      if (this.filtros.cidade) {
+        const q = this.filtros.cidade.toLowerCase()
+        list = list.filter(r => (r.municipio || '').toLowerCase().includes(q))
+      }
+      
       return [...list].sort((a, b) => {
         let va = (a[this.sortKey] || '').toLowerCase()
         let vb = (b[this.sortKey] || '').toLowerCase()
+        if (typeof a[this.sortKey] === 'number') {
+          va = a[this.sortKey] || 0
+          vb = b[this.sortKey] || 0
+        }
         if (va === vb) return 0
         return (va < vb ? -1 : 1) * (this.sortDir === 'asc' ? 1 : -1)
       })
+    },
+    
+    paginatedRows() {
+      const start = (this.paginaAtual - 1) * this.itensPorPagina
+      const end = start + this.itensPorPagina
+      return this.filteredRows.slice(start, end)
+    },
+    
+    totalPages() {
+      return Math.ceil(this.filteredRows.length / this.itensPorPagina)
     }
   },
 
-  mounted() { this.buscarTodos() },
+  watch: {
+    filteredRows() {
+      this.paginaAtual = 1
+    },
+    
+    searchTerm() {
+      this.paginaAtual = 1
+    }
+  },
+
+  mounted() { 
+    this.buscarTodos() 
+  },
 
   methods: {
     async buscarTodos() {
@@ -128,11 +318,22 @@ export default {
       try {
         const res = await fetch(API)
         this.rows = await res.json()
+        this.showToast('Empresas carregadas com sucesso!', 'success')
       } catch {
         this.showToast('Erro ao carregar empresas.', 'error')
       } finally {
         this.loading = false
       }
+    },
+
+    alternarFiltros() {
+      this.mostrarFiltros = !this.mostrarFiltros
+    },
+
+    limparFiltros() {
+      this.filtros = { cnpj: '', razaoSocial: '', telefone: '', email: '', cidade: '' }
+      this.searchTerm = ''
+      this.showToast('Filtros limpos', 'info')
     },
 
     confirmarDelecao(row) {
@@ -145,7 +346,7 @@ export default {
         const res = await fetch(`${API}/${this.confirm.id}`, { method: 'DELETE' })
         if (!res.ok) throw new Error()
         this.rows = this.rows.filter(r => r.id !== this.confirm.id)
-        this.showToast('Empresa excluída com sucesso.', 'success')
+        this.showToast('Empresa excluída com sucesso!', 'success')
       } catch {
         this.showToast('Erro ao excluir empresa.', 'error')
       }
@@ -175,6 +376,18 @@ export default {
       return tel
     },
 
+    irParaNovaEmpresa() {
+      this.$router.push('/empresa')
+    },
+
+    editarEmpresa(id) {
+      this.$router.push(`/empresa/${id}`)
+    },
+
+    verDetalhes(row) {
+      this.showToast(`Visualizando ${row.razaoSocial}`, 'info')
+    },
+
     showToast(msg, type = 'success') {
       this.toast = { visible: true, message: msg, type }
       setTimeout(() => { this.toast.visible = false }, 3200)
@@ -184,51 +397,434 @@ export default {
 </script>
 
 <style scoped>
-.empresas-page { max-width: 1200px; margin: 0 auto; }
+.empresas-page {
+  animation: fadeIn 0.5s ease;
+}
 
-.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-.page-title  { display: flex; align-items: center; gap: 14px; }
-.page-icon   { font-size: 2.2rem; }
-.page-title h1 { font-size: 1.6rem; font-weight: 700; color: #2c3e50; margin: 0; }
-.page-title p  { font-size: 0.85rem; color: #95a5a6; margin: 2px 0 0; }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
 
-.btn-new { display: inline-block; padding: 10px 22px; background: #42b983; color: #fff; text-decoration: none; border-radius: 7px; font-size: 0.92rem; font-weight: 700; transition: background .2s; }
-.btn-new:hover { background: #369870; }
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: var(--spacing-xs);
+}
 
-.loading-wrap { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 60px; color: #7f8c8d; }
-.spinner { width: 28px; height: 28px; border: 3px solid #ddd; border-top-color: #42b983; border-radius: 50%; animation: spin .7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.page-subtitle {
+  color: var(--gray-600);
+}
 
-.table-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); overflow: hidden; }
-.table-toolbar { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.header-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
 
-.filters-wrap  { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.filter-input  { padding: 8px 12px; border: 1.5px solid #e0e0e0; border-radius: 7px; font-size: 0.85rem; width: 150px; outline: none; transition: all .2s; }
-.filter-input:focus { border-color: #42b983; box-shadow: 0 0 0 2px rgba(66,185,131,.1); }
+.stat-badge {
+  background: linear-gradient(135deg, var(--primary-light), var(--primary));
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: white;
+}
 
-.total-badge { font-size: 0.82rem; color: #95a5a6; background: #f5f5f5; padding: 4px 12px; border-radius: 20px; }
+.stat-number {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
 
-.table-wrapper { overflow-x: auto; }
+.stat-text {
+  font-size: 0.75rem;
+  opacity: 0.9;
+}
 
-.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
-.data-table thead tr { background: #f8f9fa; }
-.data-table th { padding: 13px 16px; text-align: left; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #95a5a6; border-bottom: 2px solid #ecf0f1; cursor: pointer; user-select: none; white-space: nowrap; }
-.data-table th:hover { color: #2c3e50; }
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
 
-.sort-icon { font-size: 0.75rem; margin-left: 4px; }
+.search-section {
+  display: flex;
+  gap: var(--spacing-md);
+  flex: 1;
+  max-width: 500px;
+}
 
-.data-table td { padding: 12px 16px; border-bottom: 1px solid #f4f4f4; color: #34495e; vertical-align: middle; }
-.data-table tbody tr:hover { background: #fafffe; }
-.data-table tbody tr:last-child td { border-bottom: none; }
+.search-input {
+  flex: 1;
+  margin-bottom: 0;
+}
 
-.col-acoes { width: 100px; text-align: center; }
+.view-options {
+  display: flex;
+  gap: var(--spacing-xs);
+  background: var(--gray-100);
+  padding: 4px;
+  border-radius: var(--radius-md);
+}
 
-.btn-edit   { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #eaf7f1; border-radius: 6px; text-decoration: none; font-size: 0.88rem; margin: 0 2px; transition: background .2s; }
-.btn-edit:hover { background: #d0f0e2; }
-.btn-delete { width: 32px; height: 32px; background: #fdecea; border: none; border-radius: 6px; cursor: pointer; font-size: 0.88rem; margin: 0 2px; transition: background .2s; }
-.btn-delete:hover { background: #f9c9c5; }
+.view-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  font-size: 1.2rem;
+  transition: all 0.2s;
+}
 
-.empty-state { text-align: center; color: #bdc3c7; font-style: italic; padding: 40px !important; }
+.view-btn.active {
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
 
-.hint { margin-top: 14px; font-size: 0.8rem; color: #bdc3c7; text-align: center; }
+.view-btn:hover:not(.active) {
+  background: var(--gray-200);
+}
+
+.filters-panel {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  animation: slideIn 0.3s ease;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.filters-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--gray-200);
+}
+
+.filter-result {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.modern-table th {
+  text-align: left;
+  padding: var(--spacing-md);
+  background: var(--gray-50);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.sortable:hover {
+  color: var(--primary);
+}
+
+.sort-icon {
+  margin-left: var(--spacing-xs);
+  font-size: 0.75rem;
+}
+
+.modern-table td {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--gray-200);
+  transition: background 0.2s;
+}
+
+.table-row:hover {
+  background: var(--gray-50);
+  transform: scale(1.01);
+}
+
+.cnpj-badge {
+  font-family: monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.company-name {
+  font-weight: 500;
+}
+
+.email-link {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.email-link:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+.city-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--gray-100);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+}
+
+.empty-value {
+  color: var(--gray-400);
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-xs);
+  justify-content: flex-end;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.action-btn.edit:hover {
+  background: var(--primary-light);
+  transform: scale(1.1);
+}
+
+.action-btn.view:hover {
+  background: var(--info);
+  transform: scale(1.1);
+}
+
+.action-btn.delete:hover {
+  background: var(--danger);
+  transform: scale(1.1);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+}
+
+.page-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--gray-300);
+  background: white;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.company-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all 0.3s;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.company-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: linear-gradient(135deg, var(--primary-light), var(--primary));
+  color: white;
+}
+
+.card-icon {
+  font-size: 2rem;
+}
+
+.card-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.card-action {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.card-action:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.card-body {
+  padding: var(--spacing-md);
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  color: var(--gray-800);
+}
+
+.card-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+  font-size: 0.875rem;
+}
+
+.info-label {
+  font-weight: 600;
+  color: var(--gray-600);
+}
+
+.email-text {
+  color: var(--primary);
+  word-break: break-all;
+  text-align: right;
+}
+
+.card-footer {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--gray-50);
+  border-top: 1px solid var(--gray-200);
+}
+
+.badge-id {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  font-family: monospace;
+}
+
+.empty-cards {
+  grid-column: 1 / -1;
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-2xl) !important;
+}
+
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  opacity: 0.5;
+}
+
+.slide-enter-active, .slide-leave-active {
+  transition: all 0.3s ease;
+  max-height: 500px;
+  overflow: hidden;
+}
+
+.slide-enter, .slide-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .toolbar {
+    flex-direction: column;
+  }
+  
+  .search-section {
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

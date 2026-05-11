@@ -1,8 +1,6 @@
 <template>
-  <div class="unidades-page">
-
+  <div class="unidades-page container">
     <ToastNotification :visible="toast.visible" :message="toast.message" :type="toast.type" />
-
     <ConfirmDialog
       :visible="confirm.visible"
       title="Excluir Unidade"
@@ -11,143 +9,321 @@
       @cancel="confirm.visible = false"
     />
 
-    <div class="page-header">
-      <div class="page-title">
-        <span class="page-icon">📦</span>
-        <div>
-          <h1>Unidades</h1>
-          <p>Gerencie as unidades de medida do sistema</p>
+    <div class="page-header animate-fade">
+      <div>
+        <h1 class="page-title">Unidades de Medida</h1>
+        <p class="page-subtitle">Gerencie as unidades utilizadas nos produtos e lotes</p>
+      </div>
+      <div class="header-actions">
+        <div class="stat-badge">
+          <span class="stat-number">{{ rows.length }}</span>
+          <span class="stat-text">unidades cadastradas</span>
+        </div>
+        <AppButton variant="primary" @click="adicionarLinha" size="lg">
+          ➕ Nova Unidade
+        </AppButton>
+      </div>
+    </div>
+
+    <LoadingSkeleton v-if="loading" type="table" :rows="5" :columns="3" />
+
+    <AppCard v-else class="animate-fade">
+      <div class="toolbar">
+        <div class="search-section">
+          <AppInput
+            v-model="busca"
+            placeholder="Buscar unidade por nome ou ID..."
+            icon="🔍"
+            class="search-input"
+          />
+        </div>
+        <div class="view-options">
+          <button 
+            @click="modoVisualizacao = 'tabela'" 
+            :class="['view-btn', { active: modoVisualizacao === 'tabela' }]"
+            title="Visualização em tabela"
+          >
+            📊 Tabela
+          </button>
+          <button 
+            @click="modoVisualizacao = 'cards'" 
+            :class="['view-btn', { active: modoVisualizacao === 'cards' }]"
+            title="Visualização em cards"
+          >
+            🃏 Cards
+          </button>
         </div>
       </div>
-      <button class="btn-new" @click="adicionarLinha">+ Nova Unidade</button>
-    </div>
 
-    <div v-if="loading" class="loading-wrap">
-      <div class="spinner"></div>
-      <span>Carregando...</span>
-    </div>
-
-    <div v-else class="table-card">
-
-      <div class="table-toolbar">
-        <input
-          v-model="busca"
-          class="search-input"
-          placeholder="🔍  Buscar unidade..."
-        />
-        <span class="total-badge">{{ filteredRows.length }} registro(s)</span>
-      </div>
-
-      <div class="table-wrapper">
-        <table class="data-table">
+      <div v-if="modoVisualizacao === 'tabela'" class="table-container">
+        <table class="modern-table">
           <thead>
             <tr>
-              <th class="col-id"   @click="sortBy('id')">
+              <th @click="sortBy('id')" class="sortable col-id">
                 ID <span class="sort-icon">{{ sortIcon('id') }}</span>
               </th>
-              <th class="col-nome" @click="sortBy('nome')">
-                Nome <span class="sort-icon">{{ sortIcon('nome') }}</span>
+              <th @click="sortBy('nome')" class="sortable">
+                Nome da Unidade <span class="sort-icon">{{ sortIcon('nome') }}</span>
               </th>
-              <th class="col-acoes">Ações</th>
+              <th class="text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="novaLinha" class="row-new">
-              <td class="col-id">—</td>
-              <td class="col-nome">
-                <input
-                  ref="novoNomeInput"
-                  v-model="novaLinha.nome"
-                  class="cell-input"
-                  placeholder="Nome da unidade"
-                  @keyup.enter="salvarNova"
-                  @keyup.esc="cancelarNova"
-                />
+              <td class="col-id">
+                <span class="badge-new">NOVO</span>
               </td>
-              <td class="col-acoes">
-                <button class="btn-save"   @click="salvarNova"   title="Salvar (Enter)">✓</button>
-                <button class="btn-cancel-row" @click="cancelarNova" title="Cancelar (Esc)">✕</button>
+              <td>
+                <div class="inline-edit">
+                  <input
+                    ref="novoNomeInput"
+                    v-model="novaLinha.nome"
+                    class="inline-input"
+                    placeholder="Digite o nome da unidade..."
+                    @keyup.enter="salvarNova"
+                    @keyup.esc="cancelarNova"
+                    autofocus
+                  />
+                </div>
+              </td>
+              <td class="text-right">
+                <div class="action-buttons">
+                  <button class="action-btn save" @click="salvarNova" title="Salvar (Enter)">
+                    ✓ Salvar
+                  </button>
+                  <button class="action-btn cancel" @click="cancelarNova" title="Cancelar (Esc)">
+                    ✕ Cancelar
+                  </button>
+                </div>
               </td>
             </tr>
 
             <tr
-              v-for="row in filteredRows"
+              v-for="row in paginatedRows"
               :key="row.id"
               :class="{ 'row-editing': row._editing, 'row-saving': row._saving }"
+              class="table-row"
             >
-              <td class="col-id">{{ row.id }}</td>
-
-              <td class="col-nome">
-                <input
-                  v-if="row._editing"
-                  v-model="row._draft"
-                  class="cell-input"
-                  @keyup.enter="salvarEdicao(row)"
-                  @keyup.esc="cancelarEdicao(row)"
-                />
-                <span v-else class="cell-text" @dblclick="iniciarEdicao(row)" :title="'Duplo clique para editar'">{{ row.nome }}</span>
+              <td class="col-id">
+                <span class="id-badge">#{{ row.id }}</span>
               </td>
-
-              <td class="col-acoes">
-                <template v-if="row._editing">
-                  <button class="btn-save"       @click="salvarEdicao(row)"   title="Salvar">✓</button>
-                  <button class="btn-cancel-row" @click="cancelarEdicao(row)" title="Cancelar">✕</button>
-                </template>
-                <template v-else>
-                  <button class="btn-edit"   @click="iniciarEdicao(row)"    title="Editar">✏️</button>
-                  <button class="btn-delete" @click="confirmarDelecao(row)" title="Excluir">🗑️</button>
-                </template>
+              <td>
+                <div v-if="row._editing" class="inline-edit">
+                  <input
+                    v-model="row._draft"
+                    class="inline-input"
+                    @keyup.enter="salvarEdicao(row)"
+                    @keyup.esc="cancelarEdicao(row)"
+                    @blur="salvarEdicao(row)"
+                    autofocus
+                  />
+                </div>
+                <div v-else class="unit-name" @dblclick="iniciarEdicao(row)">
+                  <span class="unit-icon">📦</span>
+                  <span class="unit-text">{{ row.nome }}</span>
+                  <span class="edit-hint">✏️</span>
+                </div>
+              </td>
+              <td class="text-right">
+                <div class="action-buttons">
+                  <template v-if="row._editing">
+                    <button class="action-btn save" @click="salvarEdicao(row)" title="Salvar">
+                      ✓ Salvar
+                    </button>
+                    <button class="action-btn cancel" @click="cancelarEdicao(row)" title="Cancelar">
+                      ✕ Cancelar
+                    </button>
+                  </template>
+                  <template v-else>
+                    <button class="action-btn edit" @click="iniciarEdicao(row)" title="Editar (duplo clique)">
+                      ✏️ Editar
+                    </button>
+                    <button class="action-btn delete" @click="confirmarDelecao(row)" title="Excluir">
+                      🗑️ Excluir
+                    </button>
+                  </template>
+                </div>
               </td>
             </tr>
 
             <tr v-if="filteredRows.length === 0 && !novaLinha">
-              <td colspan="3" class="empty-state">Nenhuma unidade encontrada.</td>
+              <td colspan="3" class="empty-state">
+                <div class="empty-state-content">
+                  <span class="empty-icon">📦</span>
+                  <p>Nenhuma unidade encontrada</p>
+                  <AppButton variant="primary" size="sm" @click="adicionarLinha">
+                    Cadastrar primeira unidade
+                  </AppButton>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
-      </div>
-    </div>
 
-    <p class="hint">Dica: clique duas vezes em um nome para editá-lo diretamente na tabela.</p>
+        <div v-if="totalPages > 1" class="pagination">
+          <button @click="paginaAtual--" :disabled="paginaAtual === 1" class="page-btn">
+            ← Anterior
+          </button>
+          <div class="page-info">
+            <span class="page-current">{{ paginaAtual }}</span>
+            <span class="page-separator">/</span>
+            <span class="page-total">{{ totalPages }}</span>
+          </div>
+          <button @click="paginaAtual++" :disabled="paginaAtual === totalPages" class="page-btn">
+            Próxima →
+          </button>
+        </div>
+      </div>
+
+      <div v-else class="cards-grid">
+        <div v-if="novaLinha" class="unit-card card-new">
+          <div class="card-header">
+            <div class="card-icon">✨</div>
+            <h3>Nova Unidade</h3>
+          </div>
+          <div class="card-body">
+            <input
+              v-model="novaLinha.nome"
+              class="card-input"
+              placeholder="Nome da unidade"
+              @keyup.enter="salvarNova"
+              @keyup.esc="cancelarNova"
+            />
+          </div>
+          <div class="card-footer">
+            <button class="card-btn save" @click="salvarNova">✓ Salvar</button>
+            <button class="card-btn cancel" @click="cancelarNova">✕ Cancelar</button>
+          </div>
+        </div>
+
+        <div
+          v-for="row in paginatedRows"
+          :key="row.id"
+          class="unit-card"
+          :class="{ 'card-editing': row._editing }"
+        >
+          <div class="card-header">
+            <div class="card-icon">📦</div>
+            <div class="card-id">#{{ row.id }}</div>
+          </div>
+          <div class="card-body">
+            <div v-if="row._editing" class="card-edit">
+              <input
+                v-model="row._draft"
+                class="card-input"
+                @keyup.enter="salvarEdicao(row)"
+                @keyup.esc="cancelarEdicao(row)"
+              />
+            </div>
+            <div v-else class="card-display">
+              <h3 class="card-title">{{ row.nome }}</h3>
+            </div>
+          </div>
+          <div class="card-footer">
+            <template v-if="row._editing">
+              <button class="card-btn save" @click="salvarEdicao(row)">✓ Salvar</button>
+              <button class="card-btn cancel" @click="cancelarEdicao(row)">✕ Cancelar</button>
+            </template>
+            <template v-else>
+              <button class="card-btn edit" @click="iniciarEdicao(row)">✏️ Editar</button>
+              <button class="card-btn delete" @click="confirmarDelecao(row)">🗑️ Excluir</button>
+            </template>
+          </div>
+        </div>
+
+        <div v-if="filteredRows.length === 0 && !novaLinha" class="empty-cards">
+          <div class="empty-state-content">
+            <span class="empty-icon">📦</span>
+            <p>Nenhuma unidade encontrada</p>
+          </div>
+        </div>
+      </div>
+    </AppCard>
+
+    <div class="hint-bar">
+      <span class="hint-icon">💡</span>
+      <span class="hint-text">Dica: Clique duas vezes em qualquer unidade para editá-la rapidamente</span>
+    </div>
   </div>
 </template>
 
 <script>
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import ToastNotification from '@/components/ToastNotification.vue'
+import AppCard from '@/components/ui/AppCard.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppInput from '@/components/ui/AppInput.vue'
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
 
 const API = 'http://localhost:8081/unidade'
 
 export default {
   name: 'Unidades',
-  components: { ConfirmDialog, ToastNotification },
+  components: { ConfirmDialog, ToastNotification, AppCard, AppButton, AppInput, LoadingSkeleton },
 
   data() {
     return {
-      rows:      [],
-      loading:   true,
-      busca:     '',
+      rows: [],
+      loading: true,
+      busca: '',
       novaLinha: null,
-      sortKey:   'id',
-      sortDir:   'asc',
-      toast:   { visible: false, message: '', type: 'success' },
+      sortKey: 'id',
+      sortDir: 'asc',
+      modoVisualizacao: 'tabela',
+      paginaAtual: 1,
+      itensPorPagina: 10,
+      toast: { visible: false, message: '', type: 'success' },
       confirm: { visible: false, nome: '', id: null }
     }
   },
 
   computed: {
     filteredRows() {
-      const q = this.busca.toLowerCase()
-      let list = this.rows.filter(r =>
-        String(r.id).includes(q) || r.nome.toLowerCase().includes(q)
-      )
+      let list = [...this.rows]
+      
+      if (this.busca) {
+        const q = this.busca.toLowerCase()
+        list = list.filter(r => 
+          String(r.id).includes(q) || 
+          r.nome.toLowerCase().includes(q)
+        )
+      }
+      
       list = [...list].sort((a, b) => {
-        const va = a[this.sortKey], vb = b[this.sortKey]
+        let va = a[this.sortKey]
+        let vb = b[this.sortKey]
+        
+        if (typeof va === 'string') {
+          va = va.toLowerCase()
+          vb = vb.toLowerCase()
+        }
+        
         if (va === vb) return 0
         const cmp = va < vb ? -1 : 1
         return this.sortDir === 'asc' ? cmp : -cmp
       })
+      
       return list
+    },
+    
+    paginatedRows() {
+      const start = (this.paginaAtual - 1) * this.itensPorPagina
+      const end = start + this.itensPorPagina
+      return this.filteredRows.slice(start, end)
+    },
+    
+    totalPages() {
+      return Math.ceil(this.filteredRows.length / this.itensPorPagina)
+    }
+  },
+
+  watch: {
+    filteredRows() {
+      this.paginaAtual = 1
+    },
+    
+    busca() {
+      this.paginaAtual = 1
     }
   },
 
@@ -156,19 +332,18 @@ export default {
   },
 
   methods: {
-      limparFiltros() {
-      this.filtros = {
-        nome: '',
-      }
-      this.showToast('Filtros limpos', 'info')
-    },
-
     async buscarTodos() {
       this.loading = true
       try {
-        const res  = await fetch(API)
+        const res = await fetch(API)
         const data = await res.json()
-        this.rows  = data.map(u => ({ ...u, _editing: false, _draft: '', _saving: false }))
+        this.rows = data.map(u => ({ 
+          ...u, 
+          _editing: false, 
+          _draft: '', 
+          _saving: false 
+        }))
+        this.showToast(`${data.length} unidades carregadas`, 'success')
       } catch {
         this.showToast('Erro ao carregar unidades.', 'error')
       } finally {
@@ -178,18 +353,23 @@ export default {
 
     async salvarNova() {
       const nome = (this.novaLinha.nome || '').trim()
-      if (!nome) { this.showToast('Informe o nome da unidade.', 'error'); return }
+      if (!nome) { 
+        this.showToast('Informe o nome da unidade.', 'error')
+        return 
+      }
+      
       try {
         const res = await fetch(API, {
-          method:  'POST',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ nome })
+          body: JSON.stringify({ nome })
         })
         if (!res.ok) throw new Error()
+        
         const criado = await res.json()
-        this.rows.push({ ...criado, _editing: false, _draft: '', _saving: false })
+        this.rows.unshift({ ...criado, _editing: false, _draft: '', _saving: false })
         this.novaLinha = null
-        this.showToast('Unidade criada com sucesso!', 'success')
+        this.showToast(`Unidade "${nome}" criada com sucesso!`, 'success')
       } catch {
         this.showToast('Erro ao criar unidade.', 'error')
       }
@@ -197,19 +377,24 @@ export default {
 
     async salvarEdicao(row) {
       const nome = (row._draft || '').trim()
-      if (!nome) { this.showToast('O nome não pode ser vazio.', 'error'); return }
+      if (!nome) { 
+        this.showToast('O nome não pode ser vazio.', 'error')
+        return 
+      }
+      
       row._saving = true
       try {
         const res = await fetch(`${API}/${row.id}`, {
-          method:  'PUT',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ nome })
+          body: JSON.stringify({ nome })
         })
         if (!res.ok) throw new Error()
-        row.nome     = nome
+        
+        row.nome = nome
         row._editing = false
-        row._saving  = false
-        this.showToast('Unidade atualizada!', 'success')
+        row._saving = false
+        this.showToast(`Unidade atualizada para "${nome}"`, 'success')
       } catch {
         row._saving = false
         this.showToast('Erro ao atualizar unidade.', 'error')
@@ -219,11 +404,14 @@ export default {
     async deletarConfirmado() {
       this.confirm.visible = false
       const id = this.confirm.id
+      const nome = this.confirm.nome
+      
       try {
         const res = await fetch(`${API}/${id}`, { method: 'DELETE' })
         if (!res.ok) throw new Error()
+        
         this.rows = this.rows.filter(r => r.id !== id)
-        this.showToast('Unidade excluída.', 'success')
+        this.showToast(`Unidade "${nome}" excluída.`, 'success')
       } catch {
         this.showToast('Erro ao excluir unidade.', 'error')
       }
@@ -232,27 +420,39 @@ export default {
     adicionarLinha() {
       this.novaLinha = { nome: '' }
       this.$nextTick(() => {
-        if (this.$refs.novoNomeInput) this.$refs.novoNomeInput.focus()
+        if (this.$refs.novoNomeInput) {
+          this.$refs.novoNomeInput.focus()
+        }
       })
     },
 
-    cancelarNova() { this.novaLinha = null },
+    cancelarNova() { 
+      this.novaLinha = null 
+    },
 
     iniciarEdicao(row) {
-      this.rows.forEach(r => { r._editing = false })
-      row._draft   = row.nome
+      this.rows.forEach(r => { 
+        if (r.id !== row.id) r._editing = false 
+      })
+      row._draft = row.nome
       row._editing = true
     },
 
-    cancelarEdicao(row) { row._editing = false },
+    cancelarEdicao(row) { 
+      row._editing = false 
+    },
 
     confirmarDelecao(row) {
       this.confirm = { visible: true, nome: row.nome, id: row.id }
     },
 
     sortBy(key) {
-      if (this.sortKey === key) this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'
-      else { this.sortKey = key; this.sortDir = 'asc' }
+      if (this.sortKey === key) {
+        this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'
+      } else {
+        this.sortKey = key
+        this.sortDir = 'asc'
+      }
     },
 
     sortIcon(key) {
@@ -269,156 +469,543 @@ export default {
 </script>
 
 <style scoped>
-.unidades-page { max-width: 860px; margin: 0 auto; }
+.unidades-page {
+  animation: fadeIn 0.5s ease;
+}
 
 .page-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--spacing-md);
 }
-.page-title { display: flex; align-items: center; gap: 14px; }
-.page-icon  { font-size: 2.2rem; }
-.page-title h1 { font-size: 1.6rem; font-weight: 700; color: #2c3e50; margin: 0; }
-.page-title p  { font-size: 0.85rem; color: #95a5a6; margin: 2px 0 0; }
 
-.btn-new {
-  padding: 10px 22px;
-  background: #42b983;
-  color: #fff;
-  border: none;
-  border-radius: 7px;
-  font-size: 0.92rem;
+.page-title {
+  font-size: 2rem;
   font-weight: 700;
-  cursor: pointer;
-  transition: background .2s, transform .1s;
-  white-space: nowrap;
-}
-.btn-new:hover  { background: #369870; }
-.btn-new:active { transform: scale(0.97); }
-
-.loading-wrap {
-  display: flex; align-items: center; justify-content: center;
-  gap: 14px; padding: 60px; color: #7f8c8d; font-size: 0.95rem;
-}
-.spinner {
-  width: 28px; height: 28px;
-  border: 3px solid #ddd; border-top-color: #42b983;
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.table-card {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-  overflow: hidden;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: var(--spacing-xs);
 }
 
-.table-toolbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 20px; border-bottom: 1px solid #f0f0f0;
-  flex-wrap: wrap; gap: 10px;
+.page-subtitle {
+  color: var(--gray-600);
 }
+
+.header-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.stat-badge {
+  background: linear-gradient(135deg, var(--primary-light), var(--primary));
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: white;
+}
+
+.stat-number {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-text {
+  font-size: 0.75rem;
+  opacity: 0.9;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.search-section {
+  flex: 1;
+  max-width: 400px;
+}
+
 .search-input {
-  padding: 8px 14px;
-  border: 1.5px solid #e0e0e0; border-radius: 7px;
-  font-size: 0.9rem; width: 240px; outline: none;
-  transition: border-color .2s;
-}
-.search-input:focus { border-color: #42b983; }
-.total-badge {
-  font-size: 0.82rem; 
-  color: #95a5a6;
-  background: #f5f5f5; 
-  padding: 4px 12px; 
-  border-radius: 20px;
+  margin-bottom: 0;
 }
 
-.table-wrapper { overflow-x: auto; }
-
-
-.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
-
-.data-table thead tr { background: #f8f9fa; }
-.data-table th {
-  padding: 13px 16px; text-align: left;
-  font-size: 0.78rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .06em;
-  color: #95a5a6; border-bottom: 2px solid #ecf0f1;
-  cursor: pointer; user-select: none; white-space: nowrap;
+.view-options {
+  display: flex;
+  gap: var(--spacing-xs);
+  background: var(--gray-100);
+  padding: 4px;
+  border-radius: var(--radius-md);
 }
-.data-table th:hover { color: #2c3e50; }
-.sort-icon { font-size: 0.75rem; margin-left: 4px; }
 
-.data-table td {
-  padding: 11px 16px; border-bottom: 1px solid #f4f4f4;
-  color: #34495e; vertical-align: middle;
-}
-.data-table tbody tr { transition: background .15s; }
-.data-table tbody tr:hover { background: #fafffe; }
-.data-table tbody tr:last-child td { border-bottom: none; }
-
-.col-id    { width: 80px; }
-.col-acoes { width: 110px; text-align: center; }
-
-
-.row-new     { background: #f0fff8 !important; }
-.row-editing { background: #fffdf0 !important; }
-.row-saving  { opacity: .6; pointer-events: none; }
-
-.cell-input {
-  width: 100%; padding: 6px 10px;
-  border: 1.5px solid #42b983; border-radius: 5px;
-  font-size: 0.92rem; outline: none; background: #fff; color: #2c3e50;
-  box-shadow: 0 0 0 3px rgba(66,185,131,.12);
-}
-.cell-text {
-  display: block; cursor: text;
-  border-radius: 4px; padding: 2px 4px;
-  transition: background .15s;
-}
-.cell-text:hover { background: #f0fff8; }
-
-.col-acoes button {
-  width: 32px; height: 32px;
-  border: none; border-radius: 6px;
-  cursor: pointer; font-size: 0.88rem;
-  transition: background .2s, transform .1s;
-  margin: 0 2px;
-}
-.col-acoes button:active { transform: scale(0.92); }
-.btn-edit        { background: #eaf7f1; }
-.btn-edit:hover  { background: #d0f0e2; }
-.btn-delete      { background: #fdecea; }
-.btn-delete:hover{ background: #f9c9c5; }
-.btn-save        { background: #42b983; color: #fff; font-weight: 700; font-size: 1rem; }
-.btn-save:hover  { background: #369870; }
-.btn-cancel-row        { background: #ecf0f1; color: #7f8c8d; font-size: 1rem; }
-.btn-cancel-row:hover  { background: #d5dbdb; }
-
-
-.empty-state { text-align: center; color: #bdc3c7; font-style: italic; padding: 40px !important; }
-.hint { margin-top: 14px; font-size: 0.8rem; color: #bdc3c7; text-align: center; }
-
- .btn-clear {
-  padding: 8px 16px;
+.view-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
   border: none;
-  border-radius: 7px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  background: transparent;
   cursor: pointer;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
   transition: all 0.2s;
 }
 
-.btn-clear {
-  background: #ecf0f1;
-  color: #7f8c8d;
+.view-btn.active {
+  background: white;
+  box-shadow: var(--shadow-sm);
+  color: var(--primary);
 }
-.btn-clear:hover {
-  background: #d5dbdb;
+
+.view-btn:hover:not(.active) {
+  background: var(--gray-200);
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.modern-table th {
+  text-align: left;
+  padding: var(--spacing-md);
+  background: var(--gray-50);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.sortable:hover {
+  color: var(--primary);
+}
+
+.sort-icon {
+  margin-left: var(--spacing-xs);
+  font-size: 0.75rem;
+}
+
+.modern-table td {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--gray-200);
+  transition: background 0.2s;
+}
+
+.table-row:hover {
+  background: var(--gray-50);
+}
+
+.col-id {
+  width: 100px;
+}
+
+.id-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--gray-100);
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.badge-new {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--secondary);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+}
+
+.unit-name {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.unit-name:hover {
+  background: var(--gray-100);
+}
+
+.unit-name:hover .edit-hint {
+  opacity: 1;
+}
+
+.unit-icon {
+  font-size: 1.2rem;
+}
+
+.unit-text {
+  font-weight: 500;
+}
+
+.edit-hint {
+  margin-left: auto;
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+  color: var(--gray-400);
+}
+
+.inline-edit {
+  width: 100%;
+}
+
+.inline-input {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.inline-input:focus {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-xs);
+  justify-content: flex-end;
+}
+
+.action-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.action-btn.save {
+  background: var(--secondary);
+  color: white;
+}
+
+.action-btn.save:hover {
+  background: var(--secondary-dark);
+  transform: scale(1.05);
+}
+
+.action-btn.edit {
+  background: var(--primary-light);
+  color: white;
+}
+
+.action-btn.edit:hover {
+  background: var(--primary);
+  transform: scale(1.05);
+}
+
+.action-btn.delete {
+  background: var(--danger);
+  color: white;
+}
+
+.action-btn.delete:hover {
+  background: #c0392b;
+  transform: scale(1.05);
+}
+
+.action-btn.cancel {
+  background: var(--gray-300);
+  color: var(--gray-700);
+}
+
+.action-btn.cancel:hover {
+  background: var(--gray-400);
+  transform: scale(1.05);
+}
+
+.row-new {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.05), transparent);
+}
+
+.row-editing {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.05), transparent);
+}
+
+.row-saving {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+}
+
+.page-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--gray-300);
+  background: white;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.875rem;
+}
+
+.page-current {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.page-separator {
+  color: var(--gray-400);
+}
+
+.page-total {
+  color: var(--gray-600);
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.unit-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all 0.3s;
+  box-shadow: var(--shadow-sm);
+}
+
+.unit-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.card-new {
+  background: linear-gradient(135deg, var(--secondary-light), var(--secondary));
+  color: white;
+}
+
+.card-new .card-header h3 {
+  color: white;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.card-icon {
+  font-size: 2rem;
+}
+
+.card-id {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+.card-body {
+  padding: var(--spacing-lg);
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+}
+
+.card-input {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  transition: all 0.2s;
+}
+
+.card-input:focus {
+  outline: none;
+  border-color: white;
+  background: white;
+}
+
+.card-footer {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--gray-50);
+  border-top: 1px solid var(--gray-200);
+}
+
+.card-btn {
+  flex: 1;
+  padding: var(--spacing-sm);
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.card-btn.save {
+  background: var(--secondary);
+  color: white;
+}
+
+.card-btn.save:hover {
+  background: var(--secondary-dark);
+}
+
+.card-btn.edit {
+  background: var(--primary);
+  color: white;
+}
+
+.card-btn.edit:hover {
+  background: var(--primary-dark);
+}
+
+.card-btn.delete {
+  background: var(--danger);
+  color: white;
+}
+
+.card-btn.delete:hover {
+  background: #c0392b;
+}
+
+.card-btn.cancel {
+  background: var(--gray-300);
+  color: var(--gray-700);
+}
+
+.card-btn.cancel:hover {
+  background: var(--gray-400);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-2xl) !important;
+}
+
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  opacity: 0.5;
+}
+
+.hint-bar {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--gray-100);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+.hint-icon {
+  font-size: 1.2rem;
+}
+
+.hint-text {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.text-right {
+  text-align: right;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .toolbar {
+    flex-direction: column;
+  }
+  
+  .search-section {
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .view-options {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
