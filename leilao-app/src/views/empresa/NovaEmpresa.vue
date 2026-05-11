@@ -6,7 +6,8 @@
       <div>
         <h1 class="page-title">{{ isEdicao ? 'Editar Empresa' : 'Nova Empresa' }}</h1>
         <p class="page-subtitle">
-          {{ isEdicao ? 'Atualize os dados da empresa no sistema' : 'Preencha os dados para cadastrar uma nova empresa' }}
+          {{ isEdicao ? 'Atualize os dados da empresa no sistema' : 'Preencha os dados para cadastrar uma nova empresa'
+          }}
         </p>
       </div>
       <div class="header-actions">
@@ -40,22 +41,12 @@
                 <span class="label-hint">Digite o CNPJ para buscar automaticamente</span>
               </label>
               <div class="cnpj-wrapper">
-                <input 
-                  v-model="form.cnpj" 
-                  :class="{ 'input-error': erros.cnpj }"
-                  maxlength="18" 
-                  placeholder="00.000.000/0000-00"
-                  @input="mascararCNPJ" 
-                  @blur="validarCampo('cnpj')"
-                  @keyup.enter="buscarCNPJ"
-                />
-                <button 
-                  type="button" 
-                  class="btn-buscar-cnpj" 
-                  @click="buscarCNPJ" 
+                <input v-model="form.cnpj" :class="{ 'input-error': erros.cnpj }" maxlength="18"
+                  placeholder="00.000.000/0000-00" @input="mascararCNPJ" @blur="validarCampo('cnpj')"
+                  @keyup.enter="buscarCNPJ" />
+                <button type="button" class="btn-buscar-cnpj" @click="buscarCNPJ"
                   :disabled="buscandoCNPJ || !cnpjValidoParaBusca"
-                  :title="cnpjValidoParaBusca ? 'Buscar dados do CNPJ' : 'Digite um CNPJ válido (14 dígitos)'"
-                >
+                  :title="cnpjValidoParaBusca ? 'Buscar dados do CNPJ' : 'Digite um CNPJ válido (14 dígitos)'">
                   <span v-if="buscandoCNPJ" class="spinner-small"></span>
                   <span v-else>🔍 Buscar</span>
                 </button>
@@ -71,13 +62,9 @@
                 Razão Social <span class="required">*</span>
                 <span class="label-hint">Nome oficial da empresa</span>
               </label>
-              <input 
-                v-model="form.razaoSocial" 
-                :class="{ 'input-error': erros.razaoSocial, 'field-filled': form.razaoSocial }"
-                maxlength="64" 
-                placeholder="Ex: Empresa Exemplo Ltda" 
-                @blur="validarCampo('razaoSocial')"
-              />
+              <input v-model="form.razaoSocial"
+                :class="{ 'input-error': erros.razaoSocial, 'field-filled': form.razaoSocial }" maxlength="64"
+                placeholder="Ex: Empresa Exemplo Ltda" @blur="validarCampo('razaoSocial')" />
               <span class="erro-msg" v-if="erros.razaoSocial">{{ erros.razaoSocial }}</span>
               <div class="input-footer">
                 <span class="char-count">{{ (form.razaoSocial || '').length }}/64</span>
@@ -90,11 +77,7 @@
                 Nome Fantasia
                 <span class="label-hint">Opcional</span>
               </label>
-              <input 
-                v-model="form.nomeFantasia" 
-                maxlength="64" 
-                placeholder="Nome fantasia da empresa"
-              />
+              <input v-model="form.nomeFantasia" maxlength="64" placeholder="Nome fantasia da empresa" />
             </div>
 
             <div class="form-group">
@@ -102,39 +85,22 @@
                 Telefone
                 <span class="label-hint">Com DDD</span>
               </label>
-              <input 
-                v-model="form.telefone" 
-                :class="{ 'input-error': erros.telefone }"
-                maxlength="15" 
-                placeholder="(00) 00000-0000"
-                @input="mascararTelefone" 
-                @blur="validarCampo('telefone')"
-              />
+              <input v-model="form.telefone" :class="{ 'input-error': erros.telefone }" maxlength="15"
+                placeholder="(00) 00000-0000" @input="mascararTelefone" @blur="validarCampo('telefone')" />
               <span class="erro-msg" v-if="erros.telefone">{{ erros.telefone }}</span>
             </div>
 
             <div class="form-group">
               <label>E-mail</label>
-              <input 
-                v-model="form.email" 
-                :class="{ 'input-error': erros.email }"
-                maxlength="254" 
-                type="email" 
-                placeholder="contato@empresa.com.br"
-                @blur="validarCampo('email')"
-              />
+              <input v-model="form.email" :class="{ 'input-error': erros.email }" maxlength="254" type="email"
+                placeholder="contato@empresa.com.br" @blur="validarCampo('email')" />
               <span class="erro-msg" v-if="erros.email">{{ erros.email }}</span>
             </div>
 
             <div class="form-group full">
               <label>Site</label>
-              <input 
-                v-model="form.site" 
-                :class="{ 'input-error': erros.site }"
-                maxlength="254" 
-                placeholder="https://www.empresa.com.br"
-                @blur="validarCampo('site')"
-              />
+              <input v-model="form.site" :class="{ 'input-error': erros.site }" maxlength="254"
+                placeholder="https://www.empresa.com.br" @blur="validarCampo('site')" />
               <span class="erro-msg" v-if="erros.site">{{ erros.site }}</span>
             </div>
 
@@ -144,13 +110,8 @@
                 Usuário <span class="required">*</span>
                 <span class="label-hint">Nome de usuário único para acesso</span>
               </label>
-              <input 
-                v-model="form.usuario" 
-                :class="{ 'input-error': erros.usuario }"
-                maxlength="20" 
-                placeholder="usuario_empresa"
-                @blur="validarCampo('usuario')"
-              />
+              <input v-model="form.usuario" :class="{ 'input-error': erros.usuario }" maxlength="20"
+                placeholder="usuario_empresa" @blur="validarCampo('usuario')" />
               <span class="erro-msg" v-if="erros.usuario">{{ erros.usuario }}</span>
               <div class="input-hint" v-if="!erros.usuario">
                 💡 Use apenas letras minúsculas, números e underscore
@@ -163,20 +124,11 @@
                 <span class="label-hint">Mínimo 6 caracteres</span>
               </label>
               <div class="password-wrapper">
-                <input 
-                  :type="mostrarSenha ? 'text' : 'password'"
-                  v-model="form.senha" 
-                  :class="{ 'input-error': erros.senha }"
-                  maxlength="128" 
-                  placeholder="********"
-                  @blur="validarCampo('senha')"
-                />
-                <button 
-                  type="button" 
-                  class="btn-toggle-senha" 
-                  @click="mostrarSenha = !mostrarSenha"
-                  :title="mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'"
-                >
+                <input :type="mostrarSenha ? 'text' : 'password'" v-model="form.senha"
+                  :class="{ 'input-error': erros.senha }" maxlength="128" placeholder="********"
+                  @blur="validarCampo('senha')" />
+                <button type="button" class="btn-toggle-senha" @click="mostrarSenha = !mostrarSenha"
+                  :title="mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'">
                   {{ mostrarSenha ? '🙈' : '👁️' }}
                 </button>
               </div>
@@ -191,20 +143,11 @@
                 Confirmar Senha <span class="required">*</span>
               </label>
               <div class="password-wrapper">
-                <input 
-                  :type="mostrarConfirmarSenha ? 'text' : 'password'"
-                  v-model="confirmarSenha" 
-                  :class="{ 'input-error': erros.confirmarSenha }"
-                  maxlength="128" 
-                  placeholder="********"
-                  @blur="validarCampo('confirmarSenha')"
-                />
-                <button 
-                  type="button" 
-                  class="btn-toggle-senha" 
-                  @click="mostrarConfirmarSenha = !mostrarConfirmarSenha"
-                  :title="mostrarConfirmarSenha ? 'Ocultar senha' : 'Mostrar senha'"
-                >
+                <input :type="mostrarConfirmarSenha ? 'text' : 'password'" v-model="confirmarSenha"
+                  :class="{ 'input-error': erros.confirmarSenha }" maxlength="128" placeholder="********"
+                  @blur="validarCampo('confirmarSenha')" />
+                <button type="button" class="btn-toggle-senha" @click="mostrarConfirmarSenha = !mostrarConfirmarSenha"
+                  :title="mostrarConfirmarSenha ? 'Ocultar senha' : 'Mostrar senha'">
                   {{ mostrarConfirmarSenha ? '🙈' : '👁️' }}
                 </button>
               </div>
@@ -225,14 +168,8 @@
             <div class="form-group">
               <label>CEP</label>
               <div class="cep-wrapper">
-                <input 
-                  v-model="form.cep" 
-                  :class="{ 'input-error': erros.cep }"
-                  maxlength="9" 
-                  placeholder="00000-000"
-                  @input="mascararCEP" 
-                  @blur="validarCampo('cep')"
-                />
+                <input v-model="form.cep" :class="{ 'input-error': erros.cep }" maxlength="9" placeholder="00000-000"
+                  @input="mascararCEP" @blur="validarCampo('cep')" />
                 <button type="button" class="btn-cep" @click="buscarCEP" :disabled="buscandoCEP">
                   {{ buscandoCEP ? '🔍...' : '🔍 Buscar' }}
                 </button>
@@ -284,27 +221,13 @@
             </span>
           </div>
           <div class="actions-right">
-            <AppButton 
-              v-if="stepAtual === 2" 
-              type="button" 
-              variant="outline" 
-              @click="stepAtual = 1"
-            >
+            <AppButton v-if="stepAtual === 2" type="button" variant="outline" @click="stepAtual = 1">
               ← Voltar
             </AppButton>
-            <AppButton 
-              v-if="stepAtual === 1 && !isEdicao" 
-              type="button" 
-              variant="primary" 
-              @click="proximoPasso"
-            >
+            <AppButton v-if="stepAtual === 1 && !isEdicao" type="button" variant="primary" @click="proximoPasso">
               Próximo →
             </AppButton>
-            <AppButton 
-              type="submit" 
-              variant="success" 
-              :loading="salvando"
-            >
+            <AppButton type="submit" variant="success" :loading="salvando">
               {{ salvando ? 'Salvando...' : (isEdicao ? 'Atualizar Empresa' : 'Cadastrar Empresa') }}
             </AppButton>
           </div>
@@ -340,18 +263,18 @@ export default {
       confirmarSenha: '',
       toast: { visible: false, message: '', type: 'success' },
       form: {
-        razaoSocial: '', 
+        razaoSocial: '',
         nomeFantasia: '',
-        cnpj: '', 
-        logradouro: '', 
+        cnpj: '',
+        logradouro: '',
         municipio: '',
-        numero: '', 
-        complemento: '', 
-        bairro: '', 
+        numero: '',
+        complemento: '',
+        bairro: '',
         cep: '',
-        telefone: '', 
-        email: '', 
-        site: '', 
+        telefone: '',
+        email: '',
+        site: '',
         uf: '',
         usuario: '',
         senha: ''
@@ -391,7 +314,7 @@ export default {
 
   computed: {
     isEdicao() { return !!this.$route.params.id },
-    
+
     cnpjValidoParaBusca() {
       const cnpjLimpo = (this.form.cnpj || '').replace(/\D/g, '')
       return cnpjLimpo.length === 14
@@ -423,7 +346,7 @@ export default {
 
     async buscarCNPJ() {
       const cnpjLimpo = (this.form.cnpj || '').replace(/\D/g, '')
-      
+
       if (cnpjLimpo.length !== 14) {
         this.showToast('Digite um CNPJ válido com 14 dígitos', 'error')
         return
@@ -434,32 +357,100 @@ export default {
 
       try {
         const response = await fetch(`${API_CNPJ}/${cnpjLimpo}?dataset=receita`)
-        
+
         if (response.status === 404) {
           this.showToast('CNPJ não encontrado na base da Receita Federal', 'error')
           return
         }
-        
+
         if (!response.ok) {
           throw new Error('Erro na consulta')
         }
-        
+
         const data = await response.json()
-        
-        if (data.razao_social) this.form.razaoSocial = data.razao_social
-        if (data.nome_fantasia) this.form.nomeFantasia = data.nome_fantasia
-        if (data.uf) this.form.uf = data.uf
-        if (data.municipio) this.form.municipio = data.municipio
-        
+
+        if (data.razao_social) {
+          this.form.razaoSocial = data.razao_social
+        }
+
+        if (data.nome_fantasia) {
+          this.form.nomeFantasia = data.nome_fantasia
+        }
+
+        if (data.uf) {
+          this.form.uf = data.uf
+        }
+
+        if (data.municipio) {
+          this.form.municipio = data.municipio
+        }
+
+        if (data.logradouro) {
+          this.form.logradouro = data.logradouro
+        }
+        if (data.numero && data.numero !== 'S/N') {
+          this.form.numero = data.numero
+        } else {
+          this.form.numero = ''
+        }
+        if (data.bairro) {
+          this.form.bairro = data.bairro
+        }
+
+        if (data.telefones && data.telefones.length > 0) {
+          const primeiroTelefone = data.telefones[0]
+          if (primeiroTelefone.ddd && primeiroTelefone.numero) {
+            const telefoneCompleto = `${primeiroTelefone.ddd}${primeiroTelefone.numero}`
+            this.form.telefone = this.aplicarMascaraTelefone(telefoneCompleto)
+          }
+        }
+
+        if (data.email && data.email.trim() !== '') {
+          this.form.email = data.email
+        }
+
         if (data.cep) {
           this.form.cep = this.aplicarMascaraCEP(data.cep)
           await this.buscarCEPAutomatico(data.cep)
         }
-        
+
+        if (data.QSA && data.QSA.length > 0) {
+          const primeiroSocio = data.QSA[0]
+          if (primeiroSocio.nome_socio) {
+            let nomeSocio = primeiroSocio.nome_socio
+              .toLowerCase()
+              .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+              .replace(/[^a-z0-9\s]/g, '')
+              .trim()
+
+            const partes = nomeSocio.split(/\s+/)
+            let sugestaoUsuario = ''
+
+            if (partes.length === 1) {
+              sugestaoUsuario = partes[0]
+            } else if (partes.length === 2) {
+              sugestaoUsuario = `${partes[0]}.${partes[1]}`
+            } else {
+              sugestaoUsuario = `${partes[0]}.${partes[partes.length - 1]}`
+            }
+
+            sugestaoUsuario = sugestaoUsuario.substring(0, 20).replace(/\.+$/, '')
+
+            if (!this.form.usuario || this.form.usuario === '') {
+              this.form.usuario = sugestaoUsuario
+            }
+
+            this.showToast(`💡 Usuário sugerido: ${sugestaoUsuario} (baseado no sócio ${primeiroSocio.nome_socio.split(' ')[0]})`, 'info')
+          }
+        }
+
         this.showToast('Dados do CNPJ carregados com sucesso!', 'success')
+
         this.$delete(this.erros, 'razaoSocial')
         this.$delete(this.erros, 'cnpj')
-        
+        this.$delete(this.erros, 'telefone')
+        this.$delete(this.erros, 'email')
+
       } catch (error) {
         console.error('Erro ao buscar CNPJ:', error)
         this.showToast('Erro ao buscar dados do CNPJ. Tente novamente.', 'error')
@@ -467,7 +458,7 @@ export default {
         this.buscandoCNPJ = false
       }
     },
-    
+
     async buscarCEPAutomatico(cep) {
       const cepLimpo = cep.replace(/\D/g, '')
       if (cepLimpo.length !== 8) return
@@ -475,7 +466,7 @@ export default {
       try {
         const res = await fetch(`${API_CEP}/${cepLimpo}/json/`)
         const data = await res.json()
-        
+
         if (!data.erro) {
           this.form.logradouro = data.logradouro || this.form.logradouro
           this.form.bairro = data.bairro || this.form.bairro
@@ -498,7 +489,7 @@ export default {
       try {
         const res = await fetch(`${API_CEP}/${cep}/json/`)
         const data = await res.json()
-        
+
         if (!data.erro) {
           this.form.logradouro = data.logradouro
           this.form.bairro = data.bairro
@@ -524,26 +515,25 @@ export default {
     validarStep1() {
       const campos = ['razaoSocial', 'cnpj', 'usuario', 'senha']
       let valido = true
-      
+
       campos.forEach(c => {
         this.validarCampo(c)
         if (this.erros[c]) valido = false
       })
-      
-      // Validar confirmação de senha
+
       if (this.form.senha !== this.confirmarSenha) {
         this.erros.confirmarSenha = 'As senhas não coincidem'
         valido = false
       } else {
         this.$delete(this.erros, 'confirmarSenha')
       }
-      
+
       return valido
     },
 
     async salvar() {
       if (!this.validarTudo()) return
-      
+
       this.salvando = true
       try {
         const payload = { ...this.form }
@@ -558,9 +548,9 @@ export default {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         })
-        
+
         if (!res.ok) throw new Error()
-        
+
         this.showToast(this.isEdicao ? 'Empresa atualizada com sucesso!' : 'Empresa cadastrada com sucesso!', 'success')
         setTimeout(() => this.$router.push('/empresas'), 1500)
       } catch {
@@ -574,12 +564,11 @@ export default {
       this.erros = {}
       const campos = ['razaoSocial', 'cnpj', 'telefone', 'email', 'site', 'cep', 'usuario', 'senha']
       campos.forEach(c => this.validarCampo(c))
-      
-      // Validar confirmação de senha
+
       if (this.form.senha !== this.confirmarSenha) {
         this.erros.confirmarSenha = 'As senhas não coincidem'
       }
-      
+
       return Object.keys(this.erros).length === 0
     },
 
@@ -643,14 +632,14 @@ export default {
 
     validarCNPJ(cnpj) {
       if (/^(\d)\1+$/.test(cnpj)) return false
-      
-      let pesos1 = [5,4,3,2,9,8,7,6,5,4,3,2]
-      let pesos2 = [6,5,4,3,2,9,8,7,6,5,4,3,2]
-      
+
+      let pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+      let pesos2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+
       let soma = pesos1.reduce((s, p, i) => s + p * parseInt(cnpj[i]), 0)
       let resto = soma % 11
       if (parseInt(cnpj[12]) !== (resto < 2 ? 0 : 11 - resto)) return false
-      
+
       soma = pesos2.reduce((s, p, i) => s + p * parseInt(cnpj[i]), 0)
       resto = soma % 11
       return parseInt(cnpj[13]) === (resto < 2 ? 0 : 11 - resto)
@@ -659,19 +648,19 @@ export default {
     mascararCNPJ(e) {
       this.form.cnpj = this.aplicarMascaraCNPJ(e.target.value)
     },
-    
+
     aplicarMascaraCNPJ(v) {
       const n = v.replace(/\D/g, '').slice(0, 14)
       return n.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
-              .replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})/, '$1.$2.$3/$4')
-              .replace(/^(\d{2})(\d{3})(\d{0,3})/, '$1.$2.$3')
-              .replace(/^(\d{2})(\d{0,3})/, '$1.$2')
+        .replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})/, '$1.$2.$3/$4')
+        .replace(/^(\d{2})(\d{3})(\d{0,3})/, '$1.$2.$3')
+        .replace(/^(\d{2})(\d{0,3})/, '$1.$2')
     },
 
     mascararTelefone(e) {
       this.form.telefone = this.aplicarMascaraTelefone(e.target.value)
     },
-    
+
     aplicarMascaraTelefone(v) {
       const n = v.replace(/\D/g, '').slice(0, 11)
       if (n.length === 11) return n.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3')
@@ -684,7 +673,7 @@ export default {
     mascararCEP(e) {
       this.form.cep = this.aplicarMascaraCEP(e.target.value)
     },
-    
+
     aplicarMascaraCEP(v) {
       const n = v.replace(/\D/g, '').slice(0, 8)
       return n.replace(/^(\d{5})(\d{0,3})/, '$1-$2')
@@ -837,7 +826,8 @@ label {
   margin-left: 2px;
 }
 
-input, select {
+input,
+select {
   padding: var(--spacing-md);
   border: 1.5px solid var(--gray-200);
   border-radius: var(--radius-md);
@@ -846,13 +836,15 @@ input, select {
   background: white;
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
-input.input-error, select.input-error {
+input.input-error,
+select.input-error {
   border-color: var(--danger);
 }
 
@@ -905,7 +897,9 @@ input.field-filled {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .cep-wrapper {
@@ -993,38 +987,38 @@ input.field-filled {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .header-actions {
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .form-group.dois-tercos,
   .form-group.um-terco {
     grid-column: span 1;
   }
-  
+
   .cnpj-wrapper {
     flex-direction: column;
   }
-  
+
   .cep-wrapper {
     flex-direction: column;
   }
-  
+
   .form-actions {
     flex-direction: column;
     gap: var(--spacing-md);
   }
-  
+
   .actions-right {
     width: 100%;
   }
-  
+
   .actions-right button {
     flex: 1;
   }
