@@ -12,14 +12,20 @@ class AuthService {
       })
 
       if (!response.ok) {
-        throw new Error('Credenciais inválidas')
+        const error = await response.json()
+        throw new Error(error.message || 'Credenciais inválidas')
       }
 
       const data = await response.json()
       
       if (data.token) {
         localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify({ username: data.username }))
+        localStorage.setItem('user', JSON.stringify({ 
+          username: data.username,
+          id: data.id,
+          role: data.role 
+        }))
+        localStorage.setItem('loginTime', new Date().getTime())
       }
       
       return data
@@ -29,9 +35,33 @@ class AuthService {
     }
   }
 
-  logout() {
+  logout() {    
     localStorage.removeItem('token')
     localStorage.removeItem('user')
+    localStorage.removeItem('loginTime')
+    
+    localStorage.removeItem('theme')
+    
+    window.dispatchEvent(new Event('user-logout'))
+  }
+
+  async logoutServer() {
+    try {
+      const token = this.getToken()
+      if (token) {
+        await fetch(`${API_URL}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao fazer logout no servidor:', error)
+    } finally {
+      this.logout()
+    }
   }
 
   getToken() {
@@ -44,7 +74,38 @@ class AuthService {
   }
 
   isAuthenticated() {
-    return !!this.getToken()
+    const token = this.getToken()
+    const loginTime = localStorage.getItem('loginTime')
+    
+    if (!token) return false
+    
+    if (loginTime) {
+      const elapsed = new Date().getTime() - parseInt(loginTime)
+      const eightHours = 8 * 60 * 60 * 1000
+      if (elapsed > eightHours) {
+        this.logout()
+        return false
+      }
+    }
+    
+    return true
+  }
+
+  async validateToken() {
+    const token = this.getToken()
+    if (!token) return false
+    
+    try {
+      const response = await fetch(`${API_URL}/auth/validate`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      return response.ok
+    } catch (error) {
+      return false
+    }
   }
 }
 
