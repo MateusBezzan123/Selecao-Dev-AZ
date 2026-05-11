@@ -198,3 +198,14 @@ INSERT INTO tb_comprador (empresa, leilao) VALUES
 
 ALTER TABLE TB_EMPRESA ADD COLUMN ROLE VARCHAR(20) DEFAULT 'USER';
 UPDATE TB_EMPRESA SET ROLE = 'ADMIN' WHERE ID = 1;
+
+
+
+-- Atualizar roles para diferentes empresas
+UPDATE TB_EMPRESA SET ROLE = 'ADMIN' WHERE ID = 1;  -- Leilões Brasil Ltda
+UPDATE TB_EMPRESA SET ROLE = 'VENDEDOR' WHERE ID IN (2, 3, 4, 5);  -- Vendedores
+UPDATE TB_EMPRESA SET ROLE = 'COMPRADOR' WHERE ID IN (6, 7, 8, 9, 10, 11, 12);  -- Compradores
+UPDATE TB_EMPRESA SET ROLE = 'USER' WHERE ROLE IS NULL;
+
+-- Criar coluna para permissões específicas (opcional)
+ALTER TABLE TB_EMPRESA ADD COLUMN PERMISSIONS TEXT;
