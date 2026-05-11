@@ -195,3 +195,6 @@ INSERT INTO tb_comprador (empresa, leilao) VALUES
                                                (6,  5),
                                                (7,  6),
                                                (8,  7);
+
+ALTER TABLE TB_EMPRESA ADD COLUMN ROLE VARCHAR(20) DEFAULT 'USER';
+UPDATE TB_EMPRESA SET ROLE = 'ADMIN' WHERE ID = 1;

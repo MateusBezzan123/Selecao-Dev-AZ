@@ -6,13 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -70,6 +64,9 @@ public class Empresa implements Serializable {
 
     @Column(name = "SENHA", length = 128)
     private String senha;
+
+    @Column(name = "ROLE", length = 20)
+    private String role;
 
     @Column(name = "CREATEDAT", nullable = false)
     private LocalDateTime createdAt;
