@@ -1,48 +1,69 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Home from '../views/Home.vue'
-import Unidades from '../views/unidade/Unidades.vue'
-import Empresas from '../views/empresa/Empresas.vue'
-import Leilões from '../views/leilao/Leiloes.vue'
-import Empresa from '../views/empresa/NovaEmpresa.vue'
+import Login from '../views/Login.vue'
+import authService from '@/services/auth'
 
 Vue.use(VueRouter)
 
 const routes = [
   {
+    path: '/login',
+    name: 'Login',
+    component: Login,
+    meta: { public: true }
+  },
+  {
     path: '/',
     name: 'Home',
-    component: Home
+    component: () => import('../views/Home.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/unidades',
     name: 'Unidades',
-    component: Unidades
+    component: () => import('../views/unidade/Unidades.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/empresas',
     name: 'Empresas',
-    component: Empresas
+    component: () => import('../views/empresa/Empresas.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/leiloes',
-    name: 'Leilões',
-    component: Leilões
+    name: 'Leiloes',
+    component: () => import('../views/leilao/Leiloes.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/empresa',
     name: 'Empresa',
-    component: Empresa
+    component: () => import('../views/empresa/NovaEmpresa.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/empresa/:id',
-    name: 'Empresa',
-    component: Empresa
-  },
+    name: 'EmpresaEdit',
+    component: () => import('../views/empresa/NovaEmpresa.vue'),
+    meta: { requiresAuth: true }
+  }
 ]
 
 const router = new VueRouter({
+  mode: 'hash',
   routes
+})
+
+// Navigation guard para autenticação
+router.beforeEach((to, from, next) => {
+  if (to.meta.requiresAuth && !authService.isAuthenticated()) {
+    next('/login')
+  } else if (to.path === '/login' && authService.isAuthenticated()) {
+    next('/')
+  } else {
+    next()
+  }
 })
 
 export default router

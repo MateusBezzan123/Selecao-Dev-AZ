@@ -1,6 +1,6 @@
 <template>
   <div id="app" :data-theme="theme">
-    <header class="app-header">
+    <header class="app-header" v-if="$route.path !== '/login'">
       <div class="container">
         <div class="header-content">
           <div class="logo" @click="$router.push('/')">
@@ -27,7 +27,20 @@
             </router-link>
           </nav>
 
-          <div class="header-actions">
+          <div class="header-actions" v-if="isAuthenticated">
+            <div class="user-info">
+              <span class="user-icon">👤</span>
+              <span class="user-name">{{ user?.username || 'Usuário' }}</span>
+            </div>
+            <button @click="toggleTheme" class="theme-toggle" :title="theme === 'dark' ? 'Modo claro' : 'Modo escuro'">
+              {{ theme === 'dark' ? '☀️' : '🌙' }}
+            </button>
+            <button @click="handleLogout" class="logout-btn" title="Sair">
+              🚪 Sair
+            </button>
+          </div>
+          
+          <div class="header-actions" v-else>
             <button @click="toggleTheme" class="theme-toggle" :title="theme === 'dark' ? 'Modo claro' : 'Modo escuro'">
               {{ theme === 'dark' ? '☀️' : '🌙' }}
             </button>
@@ -42,7 +55,7 @@
       </transition>
     </main>
 
-    <footer class="app-footer">
+    <footer class="app-footer" v-if="$route.path !== '/login'">
       <div class="container">
         <p>&copy; 2024 LeilãoPro - Sistema de Gerenciamento de Leilões</p>
       </div>
@@ -51,11 +64,21 @@
 </template>
 
 <script>
+import authService from '@/services/auth'
+
 export default {
   name: 'App',
   data() {
     return {
       theme: localStorage.getItem('theme') || 'light'
+    }
+  },
+  computed: {
+    isAuthenticated() {
+      return authService.isAuthenticated()
+    },
+    user() {
+      return authService.getUser()
     }
   },
   mounted() {
@@ -69,6 +92,10 @@ export default {
     },
     applyTheme() {
       document.documentElement.setAttribute('data-theme', this.theme)
+    },
+    handleLogout() {
+      authService.logout()
+      this.$router.push('/login')
     }
   }
 }
@@ -144,6 +171,31 @@ export default {
   font-size: 1.1rem;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--gray-700);
+  border-radius: 0.5rem;
+  color: white;
+}
+
+.user-icon {
+  font-size: 1rem;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 .theme-toggle {
   background: var(--gray-700);
   border: none;
@@ -159,10 +211,24 @@ export default {
   transform: rotate(15deg);
 }
 
-/* REMOVIDO O PADDING DO MAIN - AGORA SEM ESPAÇAMENTO */
+.logout-btn {
+  background: var(--danger);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  background: #c0392b;
+  transform: translateY(-2px);
+}
+
 .app-main {
   min-height: calc(100vh - 130px);
-  /* padding: var(--spacing-2xl) 0;  ← REMOVER ESTA LINHA */
 }
 
 .app-footer {
@@ -197,6 +263,18 @@ export default {
   }
   
   .logo-text {
+    display: none;
+  }
+  
+  .user-name {
+    display: none;
+  }
+  
+  .user-info {
+    padding: 0.5rem;
+  }
+  
+  .logout-btn span {
     display: none;
   }
 }
