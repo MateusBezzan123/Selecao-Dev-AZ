@@ -30,12 +30,16 @@
     <AppCard v-else class="animate-fade">
       <div class="toolbar">
         <div class="search-section">
-          <AppInput
-            v-model="searchTerm"
-            placeholder="Buscar empresas..."
-            icon="🔍"
-            class="search-input"
-          />
+          <div class="search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input
+              v-model="searchTerm"
+              type="text"
+              class="search-input-custom"
+              placeholder="Buscar empresas por nome, CNPJ ou e-mail..."
+              @input="paginaAtual = 1"
+            />
+          </div>
           <AppButton variant="outline" @click="alternarFiltros" size="md">
             {{ mostrarFiltros ? 'Ocultar filtros ▲' : 'Mostrar filtros ▼' }}
           </AppButton>
@@ -47,25 +51,42 @@
             :class="['view-btn', { active: modoVisualizacao === 'tabela' }]"
             title="Visualização em tabela"
           >
-            📊
+            📊 Tabela
           </button>
           <button 
             @click="modoVisualizacao = 'cards'" 
             :class="['view-btn', { active: modoVisualizacao === 'cards' }]"
             title="Visualização em cards"
           >
-            🃏
+            🃏 Cards
           </button>
         </div>
       </div>
+
       <transition name="slide">
         <div v-if="mostrarFiltros" class="filters-panel">
           <div class="filters-grid">
-            <AppInput v-model="filtros.cnpj" placeholder="CNPJ" label="CNPJ" />
-            <AppInput v-model="filtros.razaoSocial" placeholder="Razão Social" label="Razão Social" />
-            <AppInput v-model="filtros.telefone" placeholder="Telefone" label="Telefone" />
-            <AppInput v-model="filtros.email" placeholder="E-mail" label="E-mail" />
-            <AppInput v-model="filtros.cidade" placeholder="Cidade" label="Cidade" />
+            <!-- CORREÇÃO: Substituídos AppInputs por inputs customizados nos filtros -->
+            <div class="filter-group">
+              <label class="filter-label">CNPJ</label>
+              <input v-model="filtros.cnpj" class="filter-input" placeholder="Digite o CNPJ" />
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">Razão Social</label>
+              <input v-model="filtros.razaoSocial" class="filter-input" placeholder="Digite a razão social" />
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">Telefone</label>
+              <input v-model="filtros.telefone" class="filter-input" placeholder="Digite o telefone" />
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">E-mail</label>
+              <input v-model="filtros.email" class="filter-input" placeholder="Digite o e-mail" />
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">Cidade</label>
+              <input v-model="filtros.cidade" class="filter-input" placeholder="Digite a cidade" />
+            </div>
           </div>
           <div class="filters-actions">
             <AppButton variant="outline" @click="limparFiltros" size="sm">
@@ -149,7 +170,9 @@
             ← Anterior
           </button>
           <div class="page-info">
-            Página {{ paginaAtual }} de {{ totalPages }}
+            <span class="page-current">{{ paginaAtual }}</span>
+            <span class="page-separator">/</span>
+            <span class="page-total">{{ totalPages }}</span>
           </div>
           <button @click="paginaAtual++" :disabled="paginaAtual === totalPages" class="page-btn">
             Próxima →
@@ -215,14 +238,13 @@ import ToastNotification from '@/components/ToastNotification.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
-import AppInput from '@/components/ui/AppInput.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
 
 const API = 'http://localhost:8081/empresa'
 
 export default {
   name: 'Empresas',
-  components: { ToastNotification, ConfirmDialog, AppCard, AppButton, AppInput, LoadingSkeleton },
+  components: { ToastNotification, ConfirmDialog, AppCard, AppButton, LoadingSkeleton },
 
   data() {
     return {
@@ -318,7 +340,7 @@ export default {
       try {
         const res = await fetch(API)
         this.rows = await res.json()
-        this.showToast('Empresas carregadas com sucesso!', 'success')
+        this.showToast(`${this.rows.length} empresas carregadas`, 'success')
       } catch {
         this.showToast('Erro ao carregar empresas.', 'error')
       } finally {
@@ -405,6 +427,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
   flex-wrap: wrap;
   gap: var(--spacing-md);
@@ -465,9 +488,37 @@ export default {
   max-width: 500px;
 }
 
-.search-input {
+/* CORREÇÃO: Wrapper customizado para o campo de busca */
+.search-wrapper {
+  position: relative;
   flex: 1;
-  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 1rem;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.6;
+}
+
+.search-input-custom {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  transition: all 0.2s;
+  background: white;
+}
+
+.search-input-custom:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .view-options {
@@ -484,19 +535,22 @@ export default {
   background: transparent;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  font-size: 1.2rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   transition: all 0.2s;
 }
 
 .view-btn.active {
   background: white;
   box-shadow: var(--shadow-sm);
+  color: var(--primary);
 }
 
 .view-btn:hover:not(.active) {
   background: var(--gray-200);
 }
 
+/* Estilos dos filtros */
 .filters-panel {
   margin-bottom: var(--spacing-lg);
   padding: var(--spacing-lg);
@@ -510,6 +564,34 @@ export default {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-md);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.filter-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-input {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .filters-actions {
@@ -567,7 +649,6 @@ export default {
 
 .table-row:hover {
   background: var(--gray-50);
-  transform: scale(1.01);
 }
 
 .cnpj-badge {
@@ -668,7 +749,23 @@ export default {
 }
 
 .page-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   font-size: 0.875rem;
+}
+
+.page-current {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.page-separator {
+  color: var(--gray-400);
+}
+
+.page-total {
   color: var(--gray-600);
 }
 
@@ -788,6 +885,7 @@ export default {
   opacity: 0.5;
 }
 
+
 .slide-enter-active, .slide-leave-active {
   transition: all 0.3s ease;
   max-height: 500px;
@@ -797,6 +895,10 @@ export default {
 .slide-enter, .slide-leave-to {
   max-height: 0;
   opacity: 0;
+}
+
+.text-right {
+  text-align: right;
 }
 
 @media (max-width: 768px) {
@@ -817,6 +919,12 @@ export default {
   .search-section {
     max-width: 100%;
     width: 100%;
+    flex-direction: column;
+  }
+  
+  .view-options {
+    width: 100%;
+    justify-content: center;
   }
   
   .cards-grid {
@@ -825,6 +933,11 @@ export default {
   
   .filters-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .filters-actions {
+    flex-direction: column;
+    gap: var(--spacing-sm);
   }
 }
 </style>

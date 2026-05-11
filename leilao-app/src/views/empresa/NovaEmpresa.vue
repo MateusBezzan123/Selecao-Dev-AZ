@@ -111,7 +111,6 @@
           </div>
         </div>
 
-        <!-- Step 2: Endereço -->
         <div v-show="stepAtual === 2" class="form-step">
           <div class="form-header">
             <span class="step-badge">Passo 2 de 2</span>
@@ -502,6 +501,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
   flex-wrap: wrap;
   gap: var(--spacing-md);

@@ -30,12 +30,16 @@
     <AppCard v-else class="animate-fade">
       <div class="toolbar">
         <div class="search-section">
-          <AppInput
-            v-model="busca"
-            placeholder="Buscar unidade por nome ou ID..."
-            icon="🔍"
-            class="search-input"
-          />
+          <div class="search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input
+              v-model="busca"
+              type="text"
+              class="search-input-custom"
+              placeholder="Buscar unidade por nome ou ID..."
+              @input="paginaAtual = 1"
+            />
+          </div>
         </div>
         <div class="view-options">
           <button 
@@ -252,14 +256,13 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import ToastNotification from '@/components/ToastNotification.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
-import AppInput from '@/components/ui/AppInput.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
 
 const API = 'http://localhost:8081/unidade'
 
 export default {
   name: 'Unidades',
-  components: { ConfirmDialog, ToastNotification, AppCard, AppButton, AppInput, LoadingSkeleton },
+  components: { ConfirmDialog, ToastNotification, AppCard, AppButton, LoadingSkeleton },
 
   data() {
     return {
@@ -477,6 +480,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
   flex-wrap: wrap;
   gap: var(--spacing-md);
@@ -535,8 +539,35 @@ export default {
   max-width: 400px;
 }
 
-.search-input {
-  margin-bottom: 0;
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 1rem;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.6;
+}
+
+.search-input-custom {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  transition: all 0.2s;
+  background: white;
+}
+
+.search-input-custom:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .view-options {
