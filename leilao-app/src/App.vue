@@ -159,9 +159,10 @@ export default {
   transform: rotate(15deg);
 }
 
+/* REMOVIDO O PADDING DO MAIN - AGORA SEM ESPAÇAMENTO */
 .app-main {
   min-height: calc(100vh - 130px);
-  padding: var(--spacing-2xl) 0;
+  /* padding: var(--spacing-2xl) 0;  ← REMOVER ESTA LINHA */
 }
 
 .app-footer {

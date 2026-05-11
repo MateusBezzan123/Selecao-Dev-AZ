@@ -158,7 +158,8 @@ export default {
   background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
   color: white;
   padding: var(--spacing-2xl) var(--spacing-lg);
-  margin-bottom: var(--spacing-2xl);
+  /* REMOVIDO margin-bottom: var(--spacing-2xl); */
+  margin-bottom: 0; /* ← GARANTIR QUE NÃO TENHA MARGEM */
   position: relative;
   overflow: hidden;
 }
@@ -223,6 +224,12 @@ export default {
   color: var(--gray-400);
 }
 
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
 .section-title {
   font-size: 2rem;
   font-weight: 700;
@@ -233,6 +240,7 @@ export default {
 
 .features-section {
   margin-bottom: var(--spacing-2xl);
+  margin-top: var(--spacing-2xl);
 }
 
 .features-grid {
@@ -290,6 +298,7 @@ export default {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: var(--spacing-lg);
   margin-top: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
 }
 
 .info-card {
@@ -367,6 +376,10 @@ export default {
   
   .info-section {
     grid-template-columns: 1fr;
+  }
+  
+  .container {
+    padding: 0 var(--spacing-md);
   }
 }
 </style>
