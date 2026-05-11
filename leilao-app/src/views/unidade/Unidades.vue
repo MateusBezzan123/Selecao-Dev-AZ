@@ -41,6 +41,7 @@
             />
           </div>
         </div>
+        
         <div class="view-options">
           <button 
             @click="modoVisualizacao = 'tabela'" 
@@ -56,9 +57,18 @@
           >
             🃏 Cards
           </button>
+          
+          <ExportButton
+            :data="filteredRows"
+            :columns="exportColumns"
+            filename="unidades"
+            title="Relatório de Unidades"
+            @toast="showToastMessage"
+          />
         </div>
       </div>
 
+      <!-- Visualização em Tabela -->
       <div v-if="modoVisualizacao === 'tabela'" class="table-container">
         <table class="modern-table">
           <thead>
@@ -257,12 +267,13 @@ import ToastNotification from '@/components/ToastNotification.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
+import ExportButton from '@/components/ui/ExportButton.vue'
 
 const API = 'http://localhost:8081/unidade'
 
 export default {
   name: 'Unidades',
-  components: { ConfirmDialog, ToastNotification, AppCard, AppButton, LoadingSkeleton },
+  components: { ConfirmDialog, ToastNotification, AppCard, AppButton, LoadingSkeleton, ExportButton },
 
   data() {
     return {
@@ -317,6 +328,13 @@ export default {
     
     totalPages() {
       return Math.ceil(this.filteredRows.length / this.itensPorPagina)
+    },
+    
+    exportColumns() {
+      return [
+        { key: 'id', label: 'ID' },
+        { key: 'nome', label: 'Nome da Unidade' }
+      ]
     }
   },
 
@@ -466,6 +484,10 @@ export default {
     showToast(message, type = 'success') {
       this.toast = { visible: true, message, type }
       setTimeout(() => { this.toast.visible = false }, 3200)
+    },
+    
+    showToastMessage({ message, type }) {
+      this.showToast(message, type)
     }
   }
 }
@@ -480,35 +502,35 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
   flex-wrap: wrap;
-  gap: var(--spacing-md);
+  gap: 1rem;
 }
 
 .page-title {
   font-size: 2rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background: linear-gradient(135deg, #6366f1, #10b981);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin-bottom: var(--spacing-xs);
+  margin-bottom: 0.25rem;
 }
 
 .page-subtitle {
-  color: var(--gray-600);
+  color: #6b7280;
 }
 
 .header-actions {
   display: flex;
-  gap: var(--spacing-md);
+  gap: 1rem;
   align-items: center;
 }
 
 .stat-badge {
-  background: linear-gradient(135deg, var(--primary-light), var(--primary));
-  padding: var(--spacing-sm) var(--spacing-lg);
-  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #818cf8, #6366f1);
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.75rem;
   text-align: center;
   color: white;
 }
@@ -529,8 +551,8 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-lg);
-  gap: var(--spacing-md);
+  margin-bottom: 1.5rem;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
@@ -557,8 +579,8 @@ export default {
 .search-input-custom {
   width: 100%;
   padding: 10px 12px 10px 36px;
-  border: 1.5px solid var(--gray-200);
-  border-radius: var(--radius-md);
+  border: 1.5px solid #e5e7eb;
+  border-radius: 0.5rem;
   font-size: 0.9375rem;
   transition: all 0.2s;
   background: white;
@@ -566,36 +588,35 @@ export default {
 
 .search-input-custom:focus {
   outline: none;
-  border-color: var(--primary);
+  border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .view-options {
   display: flex;
-  gap: var(--spacing-xs);
-  background: var(--gray-100);
-  padding: 4px;
-  border-radius: var(--radius-md);
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .view-btn {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 0.5rem 1rem;
   border: none;
-  background: transparent;
+  background: #f3f4f6;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: 0.375rem;
   font-size: 0.875rem;
+  font-weight: 500;
   transition: all 0.2s;
 }
 
 .view-btn.active {
   background: white;
-  box-shadow: var(--shadow-sm);
-  color: var(--primary);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  color: #6366f1;
 }
 
 .view-btn:hover:not(.active) {
-  background: var(--gray-200);
+  background: #e5e7eb;
 }
 
 .table-container {
@@ -609,12 +630,12 @@ export default {
 
 .modern-table th {
   text-align: left;
-  padding: var(--spacing-md);
-  background: var(--gray-50);
+  padding: 1rem;
+  background: #f9fafb;
   font-weight: 600;
   font-size: 0.875rem;
-  color: var(--gray-600);
-  border-bottom: 2px solid var(--gray-200);
+  color: #6b7280;
+  border-bottom: 2px solid #e5e7eb;
 }
 
 .sortable {
@@ -624,22 +645,22 @@ export default {
 }
 
 .sortable:hover {
-  color: var(--primary);
+  color: #6366f1;
 }
 
 .sort-icon {
-  margin-left: var(--spacing-xs);
+  margin-left: 0.25rem;
   font-size: 0.75rem;
 }
 
 .modern-table td {
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--gray-200);
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
   transition: background 0.2s;
 }
 
 .table-row:hover {
-  background: var(--gray-50);
+  background: #f9fafb;
 }
 
 .col-id {
@@ -649,19 +670,19 @@ export default {
 .id-badge {
   display: inline-block;
   padding: 4px 8px;
-  background: var(--gray-100);
-  border-radius: var(--radius-sm);
+  background: #f3f4f6;
+  border-radius: 0.375rem;
   font-family: monospace;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--gray-700);
+  color: #374151;
 }
 
 .badge-new {
   display: inline-block;
   padding: 4px 8px;
-  background: var(--secondary);
-  border-radius: var(--radius-sm);
+  background: #10b981;
+  border-radius: 0.375rem;
   font-size: 0.75rem;
   font-weight: 700;
   color: white;
@@ -670,15 +691,15 @@ export default {
 .unit-name {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 0.5rem;
   cursor: pointer;
-  padding: var(--spacing-xs);
-  border-radius: var(--radius-sm);
+  padding: 0.25rem;
+  border-radius: 0.375rem;
   transition: all 0.2s;
 }
 
 .unit-name:hover {
-  background: var(--gray-100);
+  background: #f3f4f6;
 }
 
 .unit-name:hover .edit-hint {
@@ -698,7 +719,7 @@ export default {
   font-size: 0.75rem;
   opacity: 0;
   transition: opacity 0.2s;
-  color: var(--gray-400);
+  color: #9ca3af;
 }
 
 .inline-edit {
@@ -707,9 +728,9 @@ export default {
 
 .inline-input {
   width: 100%;
-  padding: var(--spacing-sm);
-  border: 2px solid var(--primary);
-  border-radius: var(--radius-md);
+  padding: 0.5rem;
+  border: 2px solid #6366f1;
+  border-radius: 0.5rem;
   font-size: 0.9375rem;
   outline: none;
   transition: all 0.2s;
@@ -721,56 +742,56 @@ export default {
 
 .action-buttons {
   display: flex;
-  gap: var(--spacing-xs);
+  gap: 0.25rem;
   justify-content: flex-end;
 }
 
 .action-btn {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 0.5rem 1rem;
   border: none;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: 0.375rem;
   font-size: 0.875rem;
   transition: all 0.2s;
 }
 
 .action-btn.save {
-  background: var(--secondary);
+  background: #10b981;
   color: white;
 }
 
 .action-btn.save:hover {
-  background: var(--secondary-dark);
+  background: #059669;
   transform: scale(1.05);
 }
 
 .action-btn.edit {
-  background: var(--primary-light);
+  background: #818cf8;
   color: white;
 }
 
 .action-btn.edit:hover {
-  background: var(--primary);
+  background: #6366f1;
   transform: scale(1.05);
 }
 
 .action-btn.delete {
-  background: var(--danger);
+  background: #ef4444;
   color: white;
 }
 
 .action-btn.delete:hover {
-  background: #c0392b;
+  background: #dc2626;
   transform: scale(1.05);
 }
 
 .action-btn.cancel {
-  background: var(--gray-300);
-  color: var(--gray-700);
+  background: #e5e7eb;
+  color: #374151;
 }
 
 .action-btn.cancel:hover {
-  background: var(--gray-400);
+  background: #d1d5db;
   transform: scale(1.05);
 }
 
@@ -791,24 +812,26 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-md);
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
 }
 
 .page-btn {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--gray-300);
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
   background: white;
   cursor: pointer;
-  border-radius: var(--radius-md);
+  border-radius: 0.5rem;
   transition: all 0.2s;
+  font-size: 0.875rem;
 }
 
 .page-btn:hover:not(:disabled) {
-  background: var(--primary);
+  background: #6366f1;
   color: white;
-  border-color: var(--primary);
+  border-color: #6366f1;
+  transform: translateY(-2px);
 }
 
 .page-btn:disabled {
@@ -819,45 +842,45 @@ export default {
 .page-info {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: 0.25rem;
   font-size: 0.875rem;
 }
 
 .page-current {
   font-weight: 700;
-  color: var(--primary);
+  color: #6366f1;
   font-size: 1rem;
 }
 
 .page-separator {
-  color: var(--gray-400);
+  color: #9ca3af;
 }
 
 .page-total {
-  color: var(--gray-600);
+  color: #6b7280;
 }
 
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--spacing-lg);
+  gap: 1.5rem;
 }
 
 .unit-card {
   background: white;
-  border-radius: var(--radius-lg);
+  border-radius: 0.75rem;
   overflow: hidden;
   transition: all 0.3s;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 .unit-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
 }
 
 .card-new {
-  background: linear-gradient(135deg, var(--secondary-light), var(--secondary));
+  background: linear-gradient(135deg, #34d399, #10b981);
   color: white;
 }
 
@@ -869,9 +892,9 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-md);
-  background: var(--gray-50);
-  border-bottom: 1px solid var(--gray-200);
+  padding: 1rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .card-icon {
@@ -881,11 +904,11 @@ export default {
 .card-id {
   font-family: monospace;
   font-size: 0.875rem;
-  color: var(--gray-500);
+  color: #9ca3af;
 }
 
 .card-body {
-  padding: var(--spacing-lg);
+  padding: 1.5rem;
 }
 
 .card-title {
@@ -897,9 +920,9 @@ export default {
 
 .card-input {
   width: 100%;
-  padding: var(--spacing-md);
+  padding: 1rem;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: var(--radius-md);
+  border-radius: 0.5rem;
   font-size: 1rem;
   background: rgba(255, 255, 255, 0.9);
   transition: all 0.2s;
@@ -913,68 +936,68 @@ export default {
 
 .card-footer {
   display: flex;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md);
-  background: var(--gray-50);
-  border-top: 1px solid var(--gray-200);
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
 }
 
 .card-btn {
   flex: 1;
-  padding: var(--spacing-sm);
+  padding: 0.5rem;
   border: none;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: 0.375rem;
   font-size: 0.875rem;
   transition: all 0.2s;
 }
 
 .card-btn.save {
-  background: var(--secondary);
+  background: #10b981;
   color: white;
 }
 
 .card-btn.save:hover {
-  background: var(--secondary-dark);
+  background: #059669;
 }
 
 .card-btn.edit {
-  background: var(--primary);
+  background: #6366f1;
   color: white;
 }
 
 .card-btn.edit:hover {
-  background: var(--primary-dark);
+  background: #4f46e5;
 }
 
 .card-btn.delete {
-  background: var(--danger);
+  background: #ef4444;
   color: white;
 }
 
 .card-btn.delete:hover {
-  background: #c0392b;
+  background: #dc2626;
 }
 
 .card-btn.cancel {
-  background: var(--gray-300);
-  color: var(--gray-700);
+  background: #e5e7eb;
+  color: #374151;
 }
 
 .card-btn.cancel:hover {
-  background: var(--gray-400);
+  background: #d1d5db;
 }
 
 .empty-state {
   text-align: center;
-  padding: var(--spacing-2xl) !important;
+  padding: 3rem !important;
 }
 
 .empty-state-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: 1rem;
 }
 
 .empty-icon {
@@ -983,14 +1006,14 @@ export default {
 }
 
 .hint-bar {
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-md);
-  background: var(--gray-100);
-  border-radius: var(--radius-lg);
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f3f4f6;
+  border-radius: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm);
+  gap: 0.5rem;
 }
 
 .hint-icon {
@@ -999,7 +1022,7 @@ export default {
 
 .hint-text {
   font-size: 0.875rem;
-  color: var(--gray-600);
+  color: #6b7280;
 }
 
 .text-right {
