@@ -19,11 +19,15 @@ class AuthService {
       const data = await response.json()
       
       if (data.token) {
+        const userResponse = await fetch(`${API_URL}/empresa?usuario=${username}`)
+        const users = await userResponse.json()
+        const user = users.find(u => u.usuario === username) || users[0]
+        
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify({ 
+          id: user?.id,
           username: data.username,
-          id: data.id,
-          role: data.role 
+          role: user?.role || 'USER'
         }))
         localStorage.setItem('loginTime', new Date().getTime())
       }
@@ -35,11 +39,10 @@ class AuthService {
     }
   }
 
-  logout() {    
+  logout() {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     localStorage.removeItem('loginTime')
-    
     localStorage.removeItem('theme')
     
     window.dispatchEvent(new Event('user-logout'))

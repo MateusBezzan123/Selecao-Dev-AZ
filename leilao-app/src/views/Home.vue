@@ -1,6 +1,5 @@
 <template>
   <div class="home-page">
-    <!-- Hero Section -->
     <div class="hero-section animate-fade">
       <div class="hero-content">
         <h1 class="hero-title">
@@ -19,7 +18,6 @@
     </div>
 
     <div class="container">
-      <!-- Próximos Leilões -->
       <div class="section-header">
         <h2 class="section-title">📅 Próximos Leilões</h2>
         <router-link to="/leiloes" class="view-all">Ver todos →</router-link>
@@ -58,7 +56,6 @@
         </div>
       </div>
 
-      <!-- Estatísticas e Ações Rápidas -->
       <div class="info-section">
         <div class="info-card">
           <h3>📊 Resumo do Sistema</h3>
@@ -160,18 +157,15 @@ export default {
           fetch(API_LOTE).then(r => r.json())
         ])
         
-        // Calcular totais por leilão
         const totalPorLeilao = {}
         lotes.forEach(l => {
           const sub = Number(l.quantidade) * Number(l.valorInicial)
           totalPorLeilao[l.leilao] = (totalPorLeilao[l.leilao] || 0) + sub
         })
         
-        // Mapear empresas
         const empresaMap = {}
         empresas.forEach(e => { empresaMap[e.id] = e })
-        
-        // Processar leilões
+
         this.leiloes = leiloes.map(l => ({
           ...l,
           _vendedorNome: empresaMap[l.vendedor]?.razaoSocial || `Empresa #${l.vendedor}`,
