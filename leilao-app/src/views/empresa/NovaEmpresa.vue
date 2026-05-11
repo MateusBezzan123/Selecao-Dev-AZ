@@ -33,6 +33,39 @@
           </div>
 
           <div class="form-grid">
+            <!-- Campo CNPJ com busca automática -->
+            <div class="form-group">
+              <label>
+                CNPJ <span class="required">*</span>
+                <span class="label-hint">Digite o CNPJ para buscar automaticamente</span>
+              </label>
+              <div class="cnpj-wrapper">
+                <input 
+                  v-model="form.cnpj" 
+                  :class="{ 'input-error': erros.cnpj }"
+                  maxlength="18" 
+                  placeholder="00.000.000/0000-00"
+                  @input="mascararCNPJ" 
+                  @blur="validarCampo('cnpj')"
+                  @keyup.enter="buscarCNPJ"
+                />
+                <button 
+                  type="button" 
+                  class="btn-buscar-cnpj" 
+                  @click="buscarCNPJ" 
+                  :disabled="buscandoCNPJ || !cnpjValidoParaBusca"
+                  :title="cnpjValidoParaBusca ? 'Buscar dados do CNPJ' : 'Digite um CNPJ válido (14 dígitos)'"
+                >
+                  <span v-if="buscandoCNPJ" class="spinner-small"></span>
+                  <span v-else>🔍 Buscar</span>
+                </button>
+              </div>
+              <span class="erro-msg" v-if="erros.cnpj">{{ erros.cnpj }}</span>
+              <div class="input-hint" v-if="!buscandoCNPJ && !erros.cnpj">
+                💡 Digite o CNPJ e clique em buscar para preencher automaticamente
+              </div>
+            </div>
+
             <div class="form-group full">
               <label>
                 Razão Social <span class="required">*</span>
@@ -40,7 +73,7 @@
               </label>
               <input 
                 v-model="form.razaoSocial" 
-                :class="{ 'input-error': erros.razaoSocial }"
+                :class="{ 'input-error': erros.razaoSocial, 'field-filled': form.razaoSocial }"
                 maxlength="64" 
                 placeholder="Ex: Empresa Exemplo Ltda" 
                 @blur="validarCampo('razaoSocial')"
@@ -54,18 +87,14 @@
 
             <div class="form-group">
               <label>
-                CNPJ <span class="required">*</span>
-                <span class="label-hint">Apenas números</span>
+                Nome Fantasia
+                <span class="label-hint">Opcional</span>
               </label>
               <input 
-                v-model="form.cnpj" 
-                :class="{ 'input-error': erros.cnpj }"
-                maxlength="18" 
-                placeholder="00.000.000/0000-00"
-                @input="mascararCNPJ" 
-                @blur="validarCampo('cnpj')"
+                v-model="form.nomeFantasia" 
+                maxlength="64" 
+                placeholder="Nome fantasia da empresa"
               />
-              <span class="erro-msg" v-if="erros.cnpj">{{ erros.cnpj }}</span>
             </div>
 
             <div class="form-group">
@@ -108,6 +137,80 @@
               />
               <span class="erro-msg" v-if="erros.site">{{ erros.site }}</span>
             </div>
+
+            <!-- ========== CAMPOS DE ACESSO ADICIONADOS ========== -->
+            <div class="form-group">
+              <label>
+                Usuário <span class="required">*</span>
+                <span class="label-hint">Nome de usuário único para acesso</span>
+              </label>
+              <input 
+                v-model="form.usuario" 
+                :class="{ 'input-error': erros.usuario }"
+                maxlength="20" 
+                placeholder="usuario_empresa"
+                @blur="validarCampo('usuario')"
+              />
+              <span class="erro-msg" v-if="erros.usuario">{{ erros.usuario }}</span>
+              <div class="input-hint" v-if="!erros.usuario">
+                💡 Use apenas letras minúsculas, números e underscore
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Senha <span class="required">*</span>
+                <span class="label-hint">Mínimo 6 caracteres</span>
+              </label>
+              <div class="password-wrapper">
+                <input 
+                  :type="mostrarSenha ? 'text' : 'password'"
+                  v-model="form.senha" 
+                  :class="{ 'input-error': erros.senha }"
+                  maxlength="128" 
+                  placeholder="********"
+                  @blur="validarCampo('senha')"
+                />
+                <button 
+                  type="button" 
+                  class="btn-toggle-senha" 
+                  @click="mostrarSenha = !mostrarSenha"
+                  :title="mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'"
+                >
+                  {{ mostrarSenha ? '🙈' : '👁️' }}
+                </button>
+              </div>
+              <span class="erro-msg" v-if="erros.senha">{{ erros.senha }}</span>
+              <div class="input-hint" v-if="!erros.senha">
+                💡 Use uma combinação de letras, números e caracteres especiais
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Confirmar Senha <span class="required">*</span>
+              </label>
+              <div class="password-wrapper">
+                <input 
+                  :type="mostrarConfirmarSenha ? 'text' : 'password'"
+                  v-model="confirmarSenha" 
+                  :class="{ 'input-error': erros.confirmarSenha }"
+                  maxlength="128" 
+                  placeholder="********"
+                  @blur="validarCampo('confirmarSenha')"
+                />
+                <button 
+                  type="button" 
+                  class="btn-toggle-senha" 
+                  @click="mostrarConfirmarSenha = !mostrarConfirmarSenha"
+                  :title="mostrarConfirmarSenha ? 'Ocultar senha' : 'Mostrar senha'"
+                >
+                  {{ mostrarConfirmarSenha ? '🙈' : '👁️' }}
+                </button>
+              </div>
+              <span class="erro-msg" v-if="erros.confirmarSenha">{{ erros.confirmarSenha }}</span>
+            </div>
+            <!-- ========== FIM DOS CAMPOS DE ACESSO ========== -->
           </div>
         </div>
 
@@ -219,6 +322,7 @@ import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
 
 const API = 'http://localhost:8081/empresa'
 const API_CEP = 'https://viacep.com.br/ws'
+const API_CNPJ = 'https://api.opencnpj.org'
 
 export default {
   name: 'Empresa',
@@ -229,10 +333,15 @@ export default {
       loading: false,
       salvando: false,
       buscandoCEP: false,
+      buscandoCNPJ: false,
       stepAtual: 1,
+      mostrarSenha: false,
+      mostrarConfirmarSenha: false,
+      confirmarSenha: '',
       toast: { visible: false, message: '', type: 'success' },
       form: {
         razaoSocial: '', 
+        nomeFantasia: '',
         cnpj: '', 
         logradouro: '', 
         municipio: '',
@@ -244,7 +353,8 @@ export default {
         email: '', 
         site: '', 
         uf: '',
-        usuario: ''
+        usuario: '',
+        senha: ''
       },
       erros: {},
       ufs: [
@@ -280,7 +390,12 @@ export default {
   },
 
   computed: {
-    isEdicao() { return !!this.$route.params.id }
+    isEdicao() { return !!this.$route.params.id },
+    
+    cnpjValidoParaBusca() {
+      const cnpjLimpo = (this.form.cnpj || '').replace(/\D/g, '')
+      return cnpjLimpo.length === 14
+    }
   },
 
   mounted() {
@@ -303,6 +418,72 @@ export default {
         this.showToast('Erro ao carregar dados da empresa.', 'error')
       } finally {
         this.loading = false
+      }
+    },
+
+    async buscarCNPJ() {
+      const cnpjLimpo = (this.form.cnpj || '').replace(/\D/g, '')
+      
+      if (cnpjLimpo.length !== 14) {
+        this.showToast('Digite um CNPJ válido com 14 dígitos', 'error')
+        return
+      }
+
+      this.buscandoCNPJ = true
+      this.showToast('Buscando dados do CNPJ...', 'info')
+
+      try {
+        const response = await fetch(`${API_CNPJ}/${cnpjLimpo}?dataset=receita`)
+        
+        if (response.status === 404) {
+          this.showToast('CNPJ não encontrado na base da Receita Federal', 'error')
+          return
+        }
+        
+        if (!response.ok) {
+          throw new Error('Erro na consulta')
+        }
+        
+        const data = await response.json()
+        
+        if (data.razao_social) this.form.razaoSocial = data.razao_social
+        if (data.nome_fantasia) this.form.nomeFantasia = data.nome_fantasia
+        if (data.uf) this.form.uf = data.uf
+        if (data.municipio) this.form.municipio = data.municipio
+        
+        if (data.cep) {
+          this.form.cep = this.aplicarMascaraCEP(data.cep)
+          await this.buscarCEPAutomatico(data.cep)
+        }
+        
+        this.showToast('Dados do CNPJ carregados com sucesso!', 'success')
+        this.$delete(this.erros, 'razaoSocial')
+        this.$delete(this.erros, 'cnpj')
+        
+      } catch (error) {
+        console.error('Erro ao buscar CNPJ:', error)
+        this.showToast('Erro ao buscar dados do CNPJ. Tente novamente.', 'error')
+      } finally {
+        this.buscandoCNPJ = false
+      }
+    },
+    
+    async buscarCEPAutomatico(cep) {
+      const cepLimpo = cep.replace(/\D/g, '')
+      if (cepLimpo.length !== 8) return
+
+      try {
+        const res = await fetch(`${API_CEP}/${cepLimpo}/json/`)
+        const data = await res.json()
+        
+        if (!data.erro) {
+          this.form.logradouro = data.logradouro || this.form.logradouro
+          this.form.bairro = data.bairro || this.form.bairro
+          this.form.municipio = data.localidade || this.form.municipio
+          this.form.uf = data.uf || this.form.uf
+        }
+      } catch (error) {
+        console.error('Erro ao buscar CEP:', error)
       }
     },
 
@@ -341,13 +522,21 @@ export default {
     },
 
     validarStep1() {
-      const campos = ['razaoSocial', 'cnpj']
+      const campos = ['razaoSocial', 'cnpj', 'usuario', 'senha']
       let valido = true
       
       campos.forEach(c => {
         this.validarCampo(c)
         if (this.erros[c]) valido = false
       })
+      
+      // Validar confirmação de senha
+      if (this.form.senha !== this.confirmarSenha) {
+        this.erros.confirmarSenha = 'As senhas não coincidem'
+        valido = false
+      } else {
+        this.$delete(this.erros, 'confirmarSenha')
+      }
       
       return valido
     },
@@ -383,8 +572,14 @@ export default {
 
     validarTudo() {
       this.erros = {}
-      const campos = ['razaoSocial', 'cnpj', 'telefone', 'email', 'site', 'cep']
+      const campos = ['razaoSocial', 'cnpj', 'telefone', 'email', 'site', 'cep', 'usuario', 'senha']
       campos.forEach(c => this.validarCampo(c))
+      
+      // Validar confirmação de senha
+      if (this.form.senha !== this.confirmarSenha) {
+        this.erros.confirmarSenha = 'As senhas não coincidem'
+      }
+      
       return Object.keys(this.erros).length === 0
     },
 
@@ -404,6 +599,19 @@ export default {
           if (n.length !== 14) erro = 'CNPJ deve ter 14 dígitos.'
           else if (!this.validarCNPJ(n)) erro = 'CNPJ inválido.'
         }
+      }
+
+      if (campo === 'usuario') {
+        if (!v) erro = 'Usuário é obrigatório.'
+        else if (v.length < 3) erro = 'Usuário deve ter no mínimo 3 caracteres.'
+        else if (v.length > 20) erro = 'Máximo 20 caracteres.'
+        else if (!/^[a-z0-9_]+$/.test(v)) erro = 'Use apenas letras minúsculas, números e underscore'
+      }
+
+      if (campo === 'senha') {
+        if (!v) erro = 'Senha é obrigatória.'
+        else if (v.length < 6) erro = 'Senha deve ter no mínimo 6 caracteres.'
+        else if (v.length > 128) erro = 'Máximo 128 caracteres.'
       }
 
       if (campo === 'email' && v) {
@@ -648,6 +856,58 @@ input.input-error, select.input-error {
   border-color: var(--danger);
 }
 
+input.field-filled {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.05), white);
+  border-color: var(--secondary-light);
+}
+
+/* Wrapper do CNPJ com botão */
+.cnpj-wrapper {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.cnpj-wrapper input {
+  flex: 1;
+}
+
+.btn-buscar-cnpj {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.btn-buscar-cnpj:hover:not(:disabled) {
+  background: var(--primary-dark);
+  transform: scale(1.02);
+}
+
+.btn-buscar-cnpj:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spinner-small {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .cep-wrapper {
   display: flex;
   gap: var(--spacing-sm);
@@ -695,6 +955,8 @@ input.input-error, select.input-error {
 }
 
 .input-hint {
+  font-size: 0.7rem;
+  color: var(--gray-400);
   font-style: italic;
 }
 
@@ -746,6 +1008,10 @@ input.input-error, select.input-error {
     grid-column: span 1;
   }
   
+  .cnpj-wrapper {
+    flex-direction: column;
+  }
+  
   .cep-wrapper {
     flex-direction: column;
   }
@@ -761,6 +1027,37 @@ input.input-error, select.input-error {
   
   .actions-right button {
     flex: 1;
+  }
+}
+
+.password-wrapper {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.password-wrapper input {
+  flex: 1;
+}
+
+.btn-toggle-senha {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.btn-toggle-senha:hover {
+  background: var(--gray-200);
+  transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+  .password-wrapper {
+    flex-direction: column;
   }
 }
 </style>
