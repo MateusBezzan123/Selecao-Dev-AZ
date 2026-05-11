@@ -27,7 +27,7 @@
                     </div>
                     <h3>{{ form.razaoSocial || form.usuario }}</h3>
                     <p class="user-role">{{ userRole }}</p>
-                    <p class="user-since">Membro desde {{ formatDate(form.createdAt) }}</p>
+                    <p class="user-since">Membro desde {{ formatarDataBR(form.createdAt) }}</p>
                 </div>
 
                 <div class="profile-stats">
@@ -37,7 +37,7 @@
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Último acesso</span>
-                        <span class="stat-value">{{ formatDate(lastLogin) }}</span>
+                        <span class="stat-value">{{ formatarDataBR(lastLogin) }}</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Status</span>
@@ -63,6 +63,7 @@
             </div>
 
             <div class="profile-content animate-fade">
+                <!-- Aba Informações Pessoais -->
                 <div v-if="activeTab === 'info'" class="profile-card">
                     <h2>📋 Informações Pessoais</h2>
                     <form @submit.prevent="updateProfile" class="profile-form">
@@ -108,6 +109,7 @@
                     </form>
                 </div>
 
+                <!-- Aba Segurança -->
                 <div v-if="activeTab === 'security'" class="profile-card">
                     <h2>🔒 Alterar Senha</h2>
                     <form @submit.prevent="updatePassword" class="profile-form">
@@ -159,6 +161,7 @@
                     </form>
                 </div>
 
+                <!-- Aba Endereço -->
                 <div v-if="activeTab === 'address'" class="profile-card">
                     <h2>📍 Endereço</h2>
                     <form @submit.prevent="updateAddress" class="profile-form">
@@ -216,6 +219,7 @@
                     </form>
                 </div>
 
+                <!-- Aba Meus Leilões -->
                 <div v-if="activeTab === 'leiloes'" class="profile-card">
                     <h2>🔖 Meus Leilões</h2>
                     <div v-if="loadingLeiloes" class="loading-small">
@@ -238,7 +242,7 @@
                             <div class="leilao-details">
                                 <div class="detail">
                                     <span class="detail-label">📅 Início:</span>
-                                    <span class="detail-value">{{ formatarData(leilao.inicioPrevisto) }}</span>
+                                    <span class="detail-value">{{ formatarDataCompleta(leilao.inicioPrevisto) }}</span>
                                 </div>
                                 <div class="detail">
                                     <span class="detail-label">💰 Total:</span>
@@ -342,42 +346,65 @@ export default {
         this.loadUserData()
     },
     methods: {
-        formatDate(valor) {
+        formatarDataBR(valor) {
             if (!valor) return 'Não informado'
             const d = new Date(valor)
             if (isNaN(d.getTime())) return 'Data inválida'
+            return d.toLocaleDateString('pt-BR')
+        },
+
+        formatarDataCompleta(valor) {
+            if (!valor) return '—'
+            const d = new Date(valor)
+            if (isNaN(d.getTime())) return valor
             return d.toLocaleDateString('pt-BR', {
                 day: '2-digit',
                 month: '2-digit',
-                year: 'numeric'
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
             })
         },
+        
         async loadUserData() {
             this.loading = true
             try {
+                const token = authService.getToken()
                 const userData = authService.getUser()
                 console.log('User data from auth:', userData)
 
+                let empresaId = null
+
                 if (userData?.id) {
-                    const response = await fetch(`${API}/${userData.id}`)
+                    empresaId = userData.id
+                    const response = await fetch(`${API}/${empresaId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    })
                     if (!response.ok) throw new Error('Erro ao buscar usuário')
                     const data = await response.json()
                     console.log('User data from API:', data)
-
-                    this.user = data
                     this.form = { ...data }
-
-                    await this.carregarMeusLeiloes(data.id)
-                } else {
-                    const username = userData?.username || localStorage.getItem('username')
-                    if (username) {
-                        const response = await fetch(`${API}?usuario=${username}`)
-                        const data = await response.json()
-                        if (data && data.length > 0) {
-                            this.form = data[0]
-                            await this.carregarMeusLeiloes(this.form.id)
+                } else if (userData?.username) {
+                    const response = await fetch(`${API}?usuario=${userData.username}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
                         }
+                    })
+                    const data = await response.json()
+                    if (data && data.length > 0) {
+                        this.form = data[0]
+                        empresaId = this.form.id
                     }
+                }
+
+                if (empresaId) {
+                    await this.carregarMeusLeiloes(empresaId)
+                } else {
+                    console.warn('Não foi possível encontrar o ID da empresa')
                 }
             } catch (error) {
                 console.error('Erro ao carregar dados:', error)
@@ -390,16 +417,25 @@ export default {
         async carregarMeusLeiloes(empresaId) {
             this.loadingLeiloes = true
             try {
-               
+                console.log('Buscando leilões para empresa ID:', empresaId)
+
                 const response = await fetch(API_LEILAO)
                 if (!response.ok) throw new Error('Erro ao buscar leilões')
                 let leiloes = await response.json()
 
+                console.log('Todos os leilões:', leiloes)
+                console.log('Vendedor ID a filtrar:', empresaId)
+
+                // Filtrar leilões onde o vendedor é a empresa logada
                 leiloes = leiloes.filter(l => l.vendedor === empresaId)
 
+                console.log('Leilões filtrados:', leiloes)
+
+                // Buscar lotes para calcular total
                 const lotesResponse = await fetch(API_LOTE)
                 const lotes = await lotesResponse.json()
 
+                // Calcular total por leilão
                 const totalPorLeilao = {}
                 lotes.forEach(l => {
                     const sub = Number(l.quantidade) * Number(l.valorInicial)
@@ -413,6 +449,10 @@ export default {
                 }))
 
                 console.log('Meus leilões carregados:', this.meusLeiloes)
+
+                if (this.meusLeiloes.length === 0) {
+                    console.log('Nenhum leilão encontrado para esta empresa')
+                }
             } catch (error) {
                 console.error('Erro ao carregar leilões:', error)
                 this.showToast('Erro ao carregar seus leilões', 'error')
@@ -557,14 +597,6 @@ export default {
 
         verLances(id) {
             this.showToast('Funcionalidade em desenvolvimento', 'info')
-        },
-
-        formatarData(valor) {
-            if (!valor) return 'Não informado'
-            const d = new Date(valor)
-            return d.toLocaleDateString('pt-BR', {
-                day: '2-digit', month: '2-digit', year: 'numeric'
-            })
         },
 
         formatarMoeda(valor) {
