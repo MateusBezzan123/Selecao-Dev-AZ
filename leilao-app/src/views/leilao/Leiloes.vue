@@ -1,6 +1,61 @@
 <template>
   <div class="leiloes-page container">
     <ToastNotification :visible="toast.visible" :message="toast.message" :type="toast.type" />
+    
+    <Modal 
+      :visible="modalVisible" 
+      @update:visible="modalVisible = $event"
+      :title="`Detalhes do Leilão ${leilaoSelecionado?.codigo || ''}`"
+      size="lg"
+    >
+      <div v-if="leilaoSelecionado" class="modal-details">
+        <div class="details-grid">
+          <div class="detail-group">
+            <label>Código</label>
+            <p class="detail-value">{{ leilaoSelecionado.codigo }}</p>
+          </div>
+          <div class="detail-group full-width">
+            <label>Descrição</label>
+            <p class="detail-value">{{ leilaoSelecionado.descricao }}</p>
+          </div>
+          <div class="detail-group">
+            <label>Vendedor</label>
+            <p class="detail-value">{{ leilaoSelecionado._vendedorNome || '—' }}</p>
+          </div>
+          <div class="detail-group">
+            <label>Total do Leilão</label>
+            <p class="detail-value highlight">{{ formatarMoeda(leilaoSelecionado._total) }}</p>
+          </div>
+          <div class="detail-group">
+            <label>Início Previsto</label>
+            <p class="detail-value">{{ formatarData(leilaoSelecionado.inicioPrevisto) }}</p>
+          </div>
+          <div class="detail-group">
+            <label>Status</label>
+            <p class="detail-value">
+              <span :class="['status-badge', getStatusClass(leilaoSelecionado)]">
+                {{ getStatus(leilaoSelecionado) }}
+              </span>
+            </p>
+          </div>
+        </div>
+        
+        <!-- Seção de Lotes (se houver) -->
+        <div v-if="leilaoSelecionado.lotes && leilaoSelecionado.lotes.length" class="lots-section">
+          <h4>📦 Lotes do Leilão</h4>
+          <div class="lots-grid">
+            <div v-for="(lote, idx) in leilaoSelecionado.lotes" :key="idx" class="lot-card">
+              <span class="lot-number">Lote #{{ idx + 1 }}</span>
+              <span class="lot-value">{{ formatarMoeda(lote.valor) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <button @click="modalVisible = false" class="modal-close-btn">Fechar</button>
+      </template>
+    </Modal>
 
     <div class="page-header animate-fade">
       <div>
@@ -168,9 +223,6 @@
                   <button class="action-btn view" title="Ver detalhes" @click="verDetalhes(row)">
                     👁️
                   </button>
-                  <button class="action-btn edit" title="Editar" @click="editarLeilao(row)">
-                    ✏️
-                  </button>
                 </div>
               </td>
             </tr>
@@ -220,6 +272,7 @@
 import ToastNotification from '@/components/ToastNotification.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
+import Modal from '@/components/ui/Modal.vue'
 
 const API_LEILAO = 'http://localhost:8081/leilao'
 const API_EMPRESA = 'http://localhost:8081/empresa'
@@ -227,7 +280,7 @@ const API_LOTE = 'http://localhost:8081/lote'
 
 export default {
   name: 'Leiloes',
-  components: { ToastNotification, AppCard, LoadingSkeleton },
+  components: { ToastNotification, AppCard, LoadingSkeleton, Modal },
   
   data() {
     return {
@@ -238,7 +291,9 @@ export default {
       paginaAtual: 1,
       itensPorPagina: 10,
       toast: { visible: false, message: '', type: 'success' },
-      filtros: { vendedor: '', descricao: '', dataInicio: '', dataFim: '' }
+      filtros: { vendedor: '', descricao: '', dataInicio: '', dataFim: '' },
+      modalVisible: false,
+      leilaoSelecionado: null
     }
   },
 
@@ -391,15 +446,29 @@ export default {
     },
 
     verDetalhes(row) {
-      this.showToast(`Visualizando detalhes do leilão ${row.codigo}`, 'info')
+      this.leilaoSelecionado = row
+      this.modalVisible = true
     },
 
-    editarLeilao(row) {
-      this.showToast(`Editar leilão ${row.codigo}`, 'info')
+    
+    getStatus(row) {
+      const dataInicio = new Date(row.inicioPrevisto)
+      const agora = new Date()
+      if (dataInicio > agora) return 'Agendado'
+      if (dataInicio <= agora) return 'Em Andamento'
+      return 'Finalizado'
+    },
+    
+    getStatusClass(row) {
+      const status = this.getStatus(row)
+      if (status === 'Agendado') return 'status-scheduled'
+      if (status === 'Em Andamento') return 'status-progress'
+      return 'status-finished'
     }
   }
 }
 </script>
+
 
 <style scoped>
 .leiloes-page {
@@ -473,7 +542,6 @@ export default {
   align-items: end;
 }
 
-/* Wrapper para campos com botão de limpar */
 .search-wrapper {
   position: relative;
   display: flex;
@@ -505,7 +573,6 @@ export default {
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
-/* Botão de limpar campo individual */
 .clear-field-btn {
   position: absolute;
   right: 8px;
@@ -578,7 +645,6 @@ export default {
   font-weight: 600;
 }
 
-/* Barra de ações de filtro */
 .filter-actions-bar {
   display: flex;
   justify-content: space-between;
@@ -914,6 +980,146 @@ export default {
   
   .btn-clear-all {
     justify-content: center;
+  }
+}
+.modal-details {
+  padding: var(--spacing-sm);
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+.detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.detail-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.detail-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 1rem;
+  color: var(--gray-800);
+  margin: 0;
+  word-break: break-word;
+}
+
+.detail-value.highlight {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-scheduled {
+  background: var(--info);
+  color: white;
+}
+
+.status-progress {
+  background: var(--warning);
+  color: white;
+}
+
+.status-finished {
+  background: var(--gray-400);
+  color: white;
+}
+
+.lots-section {
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--gray-200);
+}
+
+.lots-section h4 {
+  margin-bottom: var(--spacing-md);
+  color: var(--gray-700);
+}
+
+.lots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.lot-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm);
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+}
+
+.lot-number {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-600);
+}
+
+.lot-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.modal-close-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--gray-200);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-close-btn:hover {
+  background: var(--gray-300);
+}
+
+.modal-edit-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-edit-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .lots-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

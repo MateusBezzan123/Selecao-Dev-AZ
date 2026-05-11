@@ -9,6 +9,83 @@
       @cancel="confirm.visible = false"
     />
 
+    <Modal 
+      :visible="modalVisible" 
+      @update:visible="modalVisible = $event"
+      :title="`Detalhes da Empresa`"
+      size="lg"
+    >
+      <div v-if="empresaSelecionada" class="modal-details">
+        <div class="company-header">
+          <div class="company-avatar">🏢</div>
+          <div class="company-name-detail">
+            <h2>{{ empresaSelecionada.razaoSocial }}</h2>
+            <span class="company-id">ID: {{ empresaSelecionada.id }}</span>
+          </div>
+        </div>
+        
+        <div class="details-grid">
+          <div class="detail-group">
+            <label>CNPJ</label>
+            <p class="detail-value">{{ formatarCNPJ(empresaSelecionada.cnpj) }}</p>
+          </div>
+          <div class="detail-group">
+            <label>Telefone</label>
+            <p class="detail-value">{{ formatarTelefone(empresaSelecionada.telefone) || '—' }}</p>
+          </div>
+          <div class="detail-group">
+            <label>E-mail</label>
+            <p class="detail-value">
+              <a :href="`mailto:${empresaSelecionada.email}`" v-if="empresaSelecionada.email">
+                {{ empresaSelecionada.email }}
+              </a>
+              <span v-else>—</span>
+            </p>
+          </div>
+          <div class="detail-group">
+            <label>Site</label>
+            <p class="detail-value">
+              <a :href="empresaSelecionada.site" target="_blank" v-if="empresaSelecionada.site">
+                {{ empresaSelecionada.site }}
+              </a>
+              <span v-else>—</span>
+            </p>
+          </div>
+        </div>
+        
+        <div class="address-section">
+          <h4>📍 Endereço</h4>
+          <div class="details-grid">
+            <div class="detail-group">
+              <label>CEP</label>
+              <p class="detail-value">{{ empresaSelecionada.cep || '—' }}</p>
+            </div>
+            <div class="detail-group full-width">
+              <label>Logradouro</label>
+              <p class="detail-value">{{ empresaSelecionada.logradouro || '—' }}, {{ empresaSelecionada.numero || 'S/N' }}</p>
+            </div>
+            <div class="detail-group">
+              <label>Complemento</label>
+              <p class="detail-value">{{ empresaSelecionada.complemento || '—' }}</p>
+            </div>
+            <div class="detail-group">
+              <label>Bairro</label>
+              <p class="detail-value">{{ empresaSelecionada.bairro || '—' }}</p>
+            </div>
+            <div class="detail-group">
+              <label>Cidade/UF</label>
+              <p class="detail-value">{{ empresaSelecionada.municipio || '—' }}{{ empresaSelecionada.uf ? `/${empresaSelecionada.uf}` : '' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <button @click="modalVisible = false" class="modal-close-btn">Fechar</button>
+        <button @click="editarEmpresa(empresaSelecionada.id)" class="modal-edit-btn">✏️ Editar Empresa</button>
+      </template>
+    </Modal>
+
     <div class="page-header animate-fade">
       <div>
         <h1 class="page-title">Empresas</h1>
@@ -66,7 +143,6 @@
       <transition name="slide">
         <div v-if="mostrarFiltros" class="filters-panel">
           <div class="filters-grid">
-            <!-- CORREÇÃO: Substituídos AppInputs por inputs customizados nos filtros -->
             <div class="filter-group">
               <label class="filter-label">CNPJ</label>
               <input v-model="filtros.cnpj" class="filter-input" placeholder="Digite o CNPJ" />
@@ -239,12 +315,13 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
+import Modal from '@/components/ui/Modal.vue'
 
 const API = 'http://localhost:8081/empresa'
 
 export default {
   name: 'Empresas',
-  components: { ToastNotification, ConfirmDialog, AppCard, AppButton, LoadingSkeleton },
+  components: { ToastNotification, ConfirmDialog, AppCard, AppButton, LoadingSkeleton, Modal },
 
   data() {
     return {
@@ -259,7 +336,9 @@ export default {
       itensPorPagina: 10,
       toast: { visible: false, message: '', type: 'success' },
       confirm: { visible: false, nome: '', id: null },
-      filtros: { cnpj: '', razaoSocial: '', telefone: '', email: '', cidade: '' }
+      filtros: { cnpj: '', razaoSocial: '', telefone: '', email: '', cidade: '' },
+      modalVisible: false,
+      empresaSelecionada: null
     }
   },
 
@@ -403,11 +482,13 @@ export default {
     },
 
     editarEmpresa(id) {
+      this.modalVisible = false
       this.$router.push(`/empresa/${id}`)
     },
 
     verDetalhes(row) {
-      this.showToast(`Visualizando ${row.razaoSocial}`, 'info')
+      this.empresaSelecionada = row
+      this.modalVisible = true
     },
 
     showToast(msg, type = 'success') {
@@ -938,6 +1019,132 @@ export default {
   .filters-actions {
     flex-direction: column;
     gap: var(--spacing-sm);
+  }
+}
+
+.modal-details {
+  padding: var(--spacing-sm);
+}
+
+.company-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.company-avatar {
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(135deg, var(--primary-light), var(--primary));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+}
+
+.company-name-detail h2 {
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--gray-800);
+}
+
+.company-id {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  font-family: monospace;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.detail-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.detail-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 0.9375rem;
+  color: var(--gray-800);
+  margin: 0;
+  word-break: break-word;
+}
+
+.detail-value a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.detail-value a:hover {
+  text-decoration: underline;
+}
+
+.address-section {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--gray-200);
+}
+
+.address-section h4 {
+  margin-bottom: var(--spacing-md);
+  color: var(--gray-700);
+}
+
+.modal-close-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--gray-200);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-close-btn:hover {
+  background: var(--gray-300);
+}
+
+.modal-edit-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-edit-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .company-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .details-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
